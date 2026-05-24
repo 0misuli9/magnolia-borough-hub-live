@@ -1,3 +1,5 @@
+import { buildDynamicKnowledgePrompt, fetchRelevantKnowledgeFacts } from "./_knowledge.js";
+
 const BOROUGH_KNOWLEDGE = `You are the official AI assistant for the Borough of Magnolia, Camden County, New Jersey. You are warm, friendly, helpful, and concise. You represent the borough with civic pride and genuine care for every resident.
 
 KEY INFO:
@@ -39,6 +41,14 @@ Keep responses friendly and concise - 2 to 4 sentences unless more detail is nee
 
 function sendJson(res, statusCode, payload) {
   res.status(statusCode).json(payload);
+}
+
+function validateAuth(req) {
+  const expectedSecret = process.env.ADMIN_SECRET;
+  const providedSecret = req.headers?.["x-admin-secret"];
+  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+
+  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
 }
 
 function normalizeBody(body) {
@@ -362,9 +372,23 @@ export default async function handler(req, res) {
       ? body.previousResponseId.trim()
       : null;
 
+  let instructions = BOROUGH_KNOWLEDGE;
+
+  try {
+    const dynamicFacts = await fetchRelevantKnowledgeFacts(latestUserText);
+    instructions = buildDynamicKnowledgePrompt(BOROUGH_KNOWLEDGE, dynamicFacts);
+    console.log("[api/chat] Dynamic knowledge facts", {
+      factsCount: dynamicFacts.length,
+    });
+  } catch (error) {
+    console.error("[api/chat] Failed to load dynamic knowledge", {
+      message: error instanceof Error ? error.message : "Unknown knowledge fetch error.",
+    });
+  }
+
   const openaiPayload = {
     model,
-    instructions: BOROUGH_KNOWLEDGE,
+    instructions,
     input: [
       {
         role: "user",
@@ -396,8 +420,9 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("[api/chat] Failed to reach OpenAI", error);
     return sendJson(res, 502, {
-      error: "Failed to reach OpenAI.",
-      details: error instanceof Error ? error.message : "Unknown network error.",
+      success: false,
+      error: "OPENAI_UNREACHABLE",
+      message: "The chat service is temporarily unavailable. Please try again shortly.",
     });
   }
 
@@ -495,6 +520,7 @@ export default async function handler(req, res) {
   }
 
   return sendJson(res, 200, {
+    success: true,
     reply,
     requestData,
     responseId: typeof responseJson.id === "string" ? responseJson.id : null,

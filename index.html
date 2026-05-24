@@ -144,9 +144,39 @@
   .toast{position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 16px rgba(27,67,50,0.35);animation:slideIn 0.3s ease,fadeOut 0.3s ease 2.5s forwards;}
   @keyframes slideIn{from{transform:translateX(120px);opacity:0}to{transform:translateX(0);opacity:1}}
   @keyframes fadeOut{to{opacity:0;transform:translateX(120px)}}
+  .login-modal{position:fixed;inset:0;background:rgba(18,37,27,0.58);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+  .login-panel{width:min(100%,360px);background:white;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,0.25);padding:22px;}
+  .login-panel h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--green-dark);margin-bottom:6px;}
+  .login-panel p{font-size:13px;color:var(--text-mid);line-height:1.5;margin-bottom:16px;}
+  .login-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+  .login-cancel{background:white;border:1.5px solid var(--border);border-radius:8px;padding:11px 18px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+  .login-cancel:hover{background:var(--green-pale);color:var(--green-dark);}
+  .login-error{min-height:18px;color:var(--red);font-size:12px;line-height:1.4;margin-top:10px;}
+  .staff-view-toggle{background:white;border-bottom:1px solid var(--border);padding:10px 20px;}
+  .staff-view-inner{max-width:960px;margin:0 auto;display:flex;justify-content:flex-end;gap:8px;}
+  .view-toggle-btn{background:white;border:1.5px solid var(--border);border-radius:8px;color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 13px;}
+  .view-toggle-btn.active{background:var(--green-dark);border-color:var(--green-dark);color:white;}
+  .admin-dashboard{max-width:960px;margin:0 auto;padding:24px 20px;}
+  .admin-dashboard-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;}
+  .admin-dashboard-header h2{font-family:'Playfair Display',serif;font-size:24px;color:var(--green-dark);line-height:1.2;}
+  .admin-dashboard-header p{font-size:13px;color:var(--text-mid);margin-top:4px;}
+  .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .metric-card{background:white;border:1px solid var(--border);border-radius:8px;padding:16px;box-shadow:var(--shadow);}
+  .metric-label{font-size:10px;color:var(--text-light);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+  .metric-value{font-family:'Playfair Display',serif;font-size:28px;color:var(--green-dark);font-weight:700;margin-top:6px;word-break:break-word;}
+  .metric-note{font-size:11px;color:var(--text-mid);line-height:1.4;margin-top:4px;}
+  .audit-panel{background:white;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;}
+  .audit-panel-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);}
+  .audit-panel-header h3{font-size:14px;color:var(--green-dark);}
+  .audit-table-wrap{overflow-x:auto;}
+  .audit-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .audit-table th,.audit-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  .audit-table th{background:var(--green-pale);color:var(--text-mid);font-size:10px;letter-spacing:0.8px;text-transform:uppercase;}
+  .audit-table td{color:var(--text);}
+  .audit-status{font-size:12px;color:var(--text-mid);}
   @media(max-width:640px){
     .hero{padding:24px 18px;}.hero h2{font-size:22px;}.hero-stats{gap:16px;}
-    .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}
+    .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}.metric-grid{grid-template-columns:1fr 1fr;}
     .main{padding:16px 14px;}.tab{padding:11px 12px;font-size:12px;}
     .brand-text h1{font-size:13px;}.brand-text p{display:none;}
     .chat-container{height:calc(100vh - 380px);min-height:380px;}
@@ -175,6 +205,31 @@
     <button class="tab active" onclick="switchTab('chat',this)">🤖 AI Assistant</button>
     <button class="tab" onclick="switchTab('announcements',this)">📢 Announcements</button>
     <button class="tab" onclick="switchTab('requests',this)">🎫 Service Requests <span class="badge" id="openCount">0</span></button>
+  </div>
+</div>
+<div class="staff-view-toggle" id="staffViewToggle" style="display:none;">
+  <div class="staff-view-inner">
+    <button class="view-toggle-btn active" id="residentViewBtn" type="button" onclick="showResidentView()">Resident View</button>
+    <button class="view-toggle-btn" id="staffDashboardBtn" type="button" onclick="showStaffDashboard()">Staff Dashboard</button>
+  </div>
+</div>
+<div id="login-modal" class="login-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="login-panel">
+    <h2 id="loginTitle">Staff Login</h2>
+    <p>Sign in with your borough staff account to manage announcements and service requests.</p>
+    <div class="form-group">
+      <label class="form-label" for="staffEmail">Email</label>
+      <input class="form-input" id="staffEmail" type="email" autocomplete="username" placeholder="staff@example.gov"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="staffPassword">Password</label>
+      <input class="form-input" id="staffPassword" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')handleStaffLogin()"/>
+    </div>
+    <div class="login-error" id="loginError" aria-live="polite"></div>
+    <div class="login-actions">
+      <button class="login-cancel" type="button" onclick="hideLoginModal()">Cancel</button>
+      <button class="submit-btn" id="loginSubmit" type="button" onclick="handleStaffLogin()">Login</button>
+    </div>
   </div>
 </div>
 <div class="main">
@@ -291,114 +346,78 @@
     <div id="reqList"></div>
   </div>
 </div>
+<div id="admin-dashboard" class="admin-dashboard" style="display:none;">
+  <div class="admin-dashboard-header">
+    <div>
+      <h2>Staff Dashboard</h2>
+      <p>Operational snapshot for borough staff.</p>
+    </div>
+    <button class="login-cancel" type="button" onclick="fetchAdminMetrics()">Refresh</button>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="metric-label">Conversations</div>
+      <div class="metric-value" id="metricConversations">-</div>
+      <div class="metric-note">Logged chat activity</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Open Requests</div>
+      <div class="metric-value" id="metricOpenRequests">-</div>
+      <div class="metric-note">Requests awaiting action</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Top Topics</div>
+      <div class="metric-value" id="metricTopTopics">-</div>
+      <div class="metric-note">Most common recent category</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Recent Activity</div>
+      <div class="metric-value" id="metricRecentActivity">-</div>
+      <div class="metric-note">Latest audit log entries</div>
+    </div>
+  </div>
+  <div class="audit-panel">
+    <div class="audit-panel-header">
+      <h3>Recent Audit Logs</h3>
+      <span class="audit-status" id="auditStatus">Sign in to load activity.</span>
+    </div>
+    <div class="audit-table-wrap">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Record</th>
+            <th>Metadata</th>
+          </tr>
+        </thead>
+        <tbody id="auditLogRows">
+          <tr><td colspan="4">No audit data loaded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-let isAdmin=false;
+window.isStaffAuthenticated=false;
+let staffSession=null;
+let supabaseClient=null;
+let supabaseConfigPromise=null;
+let currentStaffView='resident';
 let announcements=[
   {id:1,type:'urgent',title:'Water Main Maintenance — West Evesham Ave',body:'Scheduled water service interruption on West Evesham Ave between Holly and Magnolia Ave, Thursday March 26 from 9AM–2PM. Residents may experience reduced pressure.',date:'March 25, 2026'},
   {id:2,type:'event',title:'Borough Council Meeting — April 7th',body:'The next regular council meeting will be held Monday, April 7th at 7:00 PM in Borough Hall. Public comment period begins at 7:30 PM. All residents welcome.',date:'March 23, 2026'},
   {id:3,type:'info',title:'Spring Bulk Trash Pickup Schedule',body:'Spring bulk trash pickup begins the week of April 14th. Items must be placed curbside by 7AM on your scheduled day. Electronics and hazardous materials are not accepted.',date:'March 20, 2026'},
 ];
-let requests=[];
+let requests=[
+  {id:'MGN-0041',title:'Pothole at Magnolia Ave & 3rd St',desc:'Large pothole near intersection, approximately 12" wide. Hazardous to vehicles.',cat:'🛣️ Roads & Infrastructure',status:'progress',date:'Mar 24'},
+  {id:'MGN-0040',title:'Streetlight Out — Holly Ave',desc:'Streetlight in front of 214 Holly Ave has been out for 3 days.',cat:'💡 Utilities & Lighting',status:'open',date:'Mar 23'},
+  {id:'MGN-0039',title:'Abandoned vehicle — Oak St',desc:'Silver sedan with no plates parked in front of 88 Oak St for over 2 weeks.',cat:'🔊 Noise & Safety',status:'resolved',date:'Mar 19'},
+];
 let convHistory=[];
 let lastResponseId=null;
 let isLoading=false;
-const REQUEST_CATEGORY_LABELS={
-  'Roads & Infrastructure':'Roads & Infrastructure',
-  'Utilities & Lighting':'Utilities & Lighting',
-  'Parks & Public Spaces':'Parks & Public Spaces',
-  'Sanitation & Trash':'Sanitation & Trash',
-  'Noise & Safety':'Noise & Safety',
-  'Permits & Zoning':'Permits & Zoning',
-  'Other':'Other'
-};
-
-function normalizeRequestCategory(cat){
-  if(!cat)return 'Other';
-  return REQUEST_CATEGORY_LABELS[cat]||cat;
-}
-function formatRequestDate(value){
-  if(!value)return '';
-  var parsed=new Date(value);
-  if(Number.isNaN(parsed.getTime()))return String(value);
-  return parsed.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-}
-function normalizeRequestRecord(record){
-  if(!record)return null;
-  var trackingNumber=record.tracking_number||record.id||record.trackingNumber||'';
-  var description=record.description||record.desc||'';
-  var address=record.address||record.addr||'';
-  var desc=description;
-  if(address)desc=desc?desc+' - '+address:address;
-  return {
-    id:trackingNumber,
-    trackingNumber:trackingNumber,
-    title:record.title||'Untitled request',
-    desc:desc,
-    cat:normalizeRequestCategory(record.category||record.cat),
-    status:record.status||'open',
-    date:formatRequestDate(record.created_at||record.date),
-    addr:address,
-    raw:record
-  };
-}
-function upsertRequestRecord(record){
-  var normalized=normalizeRequestRecord(record);
-  if(!normalized)return '';
-  requests=[normalized].concat(requests.filter(function(existing){return existing.id!==normalized.id;}));
-  renderRequests();
-  return normalized.id;
-}
-function formatAnnouncementDate(value){
-  if(!value)return '';
-  var parsed=new Date(value);
-  if(Number.isNaN(parsed.getTime()))return String(value);
-  return parsed.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-}
-function normalizeAnnouncementRecord(record){
-  if(!record)return null;
-  var type=String(record.type||'info').trim();
-  if(['urgent','event','info'].indexOf(type)===-1)type='info';
-  return {
-    id:record.id||record.created_at||Date.now(),
-    type:type,
-    title:record.title||'',
-    body:record.body||'',
-    date:formatAnnouncementDate(record.created_at||record.date),
-    raw:record
-  };
-}
-function upsertAnnouncementRecord(record){
-  var normalized=normalizeAnnouncementRecord(record);
-  if(!normalized)return '';
-  announcements=[normalized].concat(announcements.filter(function(existing){return String(existing.id)!==String(normalized.id);}));
-  renderAnnouncements();
-  updateHeroStats();
-  return normalized.id;
-}
-async function loadAnnouncements(){
-  try{
-    var res=await fetch('/api/announcements');
-    var data=await res.json();
-    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to load announcements');
-    announcements=(data.announcements||[]).map(normalizeAnnouncementRecord).filter(Boolean);
-  }catch(err){
-    console.error('Announcement load error:',err);
-  }
-  renderAnnouncements();
-  updateHeroStats();
-}
-async function loadRequests(){
-  try{
-    var res=await fetch('/api/requests');
-    var data=await res.json();
-    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to load requests');
-    requests=(data.requests||[]).map(normalizeRequestRecord).filter(Boolean);
-  }catch(err){
-    console.error('Request load error:',err);
-    requests=[];
-  }
-  renderRequests();
-}
 
 function updateHeroStats(){
   document.getElementById('heroOpen').textContent=requests.filter(r=>r.status==='open').length;
@@ -422,25 +441,20 @@ function renderRequests(){
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
   list.innerHTML='<div class="requests-grid">'+requests.map(r=>`<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${r.status}">${r.status==='progress'?'In Progress':r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div></div>`).join('')+'</div>';
 }
-async function lookupTicket(){
+function lookupTicket(){
   const input=document.getElementById('lookupInput').value.trim().toUpperCase();
   const result=document.getElementById('lookupResult');
   if(!input){result.style.display='none';return;}
   const id=input.startsWith('MGN-')?input:'MGN-'+input;
+  const ticket=requests.find(r=>r.id===id);
   result.style.display='block';
-  try{
-    const res=await fetch('/api/requests?tracking_number='+encodeURIComponent(id));
-    const data=await res.json();
-    if(!res.ok)throw new Error(data&&data.error?data.error:'Request not found');
-    const ticket=normalizeRequestRecord(data.request);
+  if(ticket){
     const s=ticket.status==='progress'?'In Progress':ticket.status.charAt(0).toUpperCase()+ticket.status.slice(1);
     result.className='lookup-result found';
-    result.innerHTML='&#9989; <strong>Request Found - '+ticket.id+'</strong><br/><strong>Issue:</strong> '+ticket.title+'<br/><strong>Status:</strong> '+s+'<br/><strong>Category:</strong> '+ticket.cat+'<br/><strong>Submitted:</strong> '+ticket.date;
-    return;
-  }catch(err){
+    result.innerHTML='✅ <strong>Request Found - '+ticket.id+'</strong><br/><strong>Issue:</strong> '+ticket.title+'<br/><strong>Status:</strong> '+s+'<br/><strong>Category:</strong> '+ticket.cat+'<br/><strong>Submitted:</strong> '+ticket.date;
+  }else{
     result.className='lookup-result notfound';
-    result.innerHTML='&#10060; No request found for <strong>'+id+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
-    return;
+    result.innerHTML='❌ No request found for <strong>'+id+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
   }
 }
 document.getElementById('lookupInput').addEventListener('keydown',function(e){if(e.key==='Enter')lookupTicket();});
@@ -451,64 +465,265 @@ function switchTab(name,el){
   document.getElementById(name).classList.add('active');
 }
 function scrollToChat(){document.getElementById('chatContainer').scrollIntoView({behavior:'smooth'});setTimeout(function(){document.getElementById('chatInput').focus();},400);}
-function toggleAdmin(){
-  isAdmin=!isAdmin;
-  var btn=document.getElementById('adminToggle');
-  btn.textContent=isAdmin?'✕ Exit Staff View':'⚙ Staff Login';
-  btn.classList.toggle('active',isAdmin);
-  document.getElementById('adminPostForm').style.display=isAdmin?'block':'none';
-  document.getElementById('adminRequestPanel').style.display=isAdmin?'block':'none';
+async function getSupabaseClient(){
+  if(supabaseClient)return supabaseClient;
+  if(!window.supabase||!window.supabase.createClient){
+    throw new Error('Supabase client library failed to load.');
+  }
+  if(!supabaseConfigPromise){
+    supabaseConfigPromise=fetch('/api/auth-config')
+      .then(function(res){return res.json().then(function(data){return {ok:res.ok,data:data};});})
+      .then(function(result){
+        if(!result.ok||!result.data||!result.data.success){
+          throw new Error(result.data&&result.data.message?result.data.message:'Supabase auth configuration failed to load.');
+        }
+        return result.data;
+      });
+  }
+  var config=await supabaseConfigPromise;
+  supabaseClient=window.supabase.createClient(config.supabaseUrl,config.supabaseAnonKey,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  return supabaseClient;
 }
-async function postAnnouncement(){
+function setStaffSession(session){
+  staffSession=session||null;
+  window.isStaffAuthenticated=Boolean(session&&session.user);
+  updateStaffUi();
+}
+function updateStaffUi(){
+  var btn=document.getElementById('adminToggle');
+  var isStaff=window.isStaffAuthenticated;
+  btn.textContent=isStaff?'Sign Out':'Staff Login';
+  btn.classList.toggle('active',isStaff);
+  document.getElementById('adminPostForm').style.display=isStaff?'block':'none';
+  document.getElementById('adminRequestPanel').style.display=isStaff?'block':'none';
+  document.getElementById('staffViewToggle').style.display=isStaff?'block':'none';
+  if(!isStaff){
+    currentStaffView='resident';
+  }
+  applyStaffViewMode();
+}
+function updateStaffViewButtons(){
+  document.getElementById('residentViewBtn').classList.toggle('active',currentStaffView==='resident');
+  document.getElementById('staffDashboardBtn').classList.toggle('active',currentStaffView==='dashboard');
+}
+function applyStaffViewMode(){
+  var showDashboard=window.isStaffAuthenticated&&currentStaffView==='dashboard';
+  document.querySelector('.main').style.display=showDashboard?'none':'block';
+  document.getElementById('admin-dashboard').style.display=showDashboard?'block':'none';
+  updateStaffViewButtons();
+}
+function showResidentView(){
+  currentStaffView='resident';
+  applyStaffViewMode();
+}
+function showStaffDashboard(){
+  if(!window.isStaffAuthenticated){
+    showLoginModal();
+    return;
+  }
+  currentStaffView='dashboard';
+  applyStaffViewMode();
+  fetchAdminMetrics();
+}
+function showLoginModal(){
+  document.getElementById('loginError').textContent='';
+  document.getElementById('login-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('staffEmail').focus();},50);
+}
+function hideLoginModal(){
+  document.getElementById('login-modal').style.display='none';
+  document.getElementById('staffPassword').value='';
+}
+async function toggleAdmin(){
+  if(window.isStaffAuthenticated){
+    try{
+      var client=await getSupabaseClient();
+      await client.auth.signOut();
+    }catch(err){
+      console.error('Staff sign-out error:',err);
+    }
+    setStaffSession(null);
+    showToast('Signed out');
+    return;
+  }
+  showLoginModal();
+}
+async function handleStaffLogin(){
+  var email=document.getElementById('staffEmail').value.trim();
+  var password=document.getElementById('staffPassword').value;
+  var errorBox=document.getElementById('loginError');
+  var submit=document.getElementById('loginSubmit');
+  errorBox.textContent='';
+  if(!email||!password){errorBox.textContent='Enter your staff email and password.';return;}
+  submit.disabled=true;
+  try{
+    var client=await getSupabaseClient();
+    var result=await client.auth.signInWithPassword({email:email,password:password});
+    if(result.error)throw result.error;
+    setStaffSession(result.data.session);
+    hideLoginModal();
+    showToast('Signed in');
+  }catch(err){
+    errorBox.textContent=err&&err.message?err.message:'Unable to sign in.';
+  }
+  submit.disabled=false;
+}
+async function initStaffAuth(){
+  try{
+    var client=await getSupabaseClient();
+    var result=await client.auth.getSession();
+    if(result.error)throw result.error;
+    setStaffSession(result.data.session);
+    client.auth.onAuthStateChange(function(_event,session){setStaffSession(session);});
+  }catch(err){
+    setStaffSession(null);
+    console.warn('Staff auth unavailable:',err.message||err);
+  }
+}
+function setMetric(id,value){
+  document.getElementById(id).textContent=value;
+}
+function formatAuditTime(value){
+  if(!value)return '';
+  var parsed=new Date(value);
+  if(Number.isNaN(parsed.getTime()))return String(value);
+  return parsed.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function getTopTopic(requestRows){
+  var counts={};
+  (requestRows||[]).forEach(function(row){
+    var category=String(row.category||'Uncategorized').trim()||'Uncategorized';
+    counts[category]=(counts[category]||0)+1;
+  });
+  var top=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
+  return top?top:'-';
+}
+function renderAuditLogRows(rows){
+  var table=document.getElementById('auditLogRows');
+  if(!rows||!rows.length){
+    table.innerHTML='<tr><td colspan="4">No recent audit activity.</td></tr>';
+    return;
+  }
+  table.innerHTML=rows.map(function(row){
+    var metadata=row.metadata?JSON.stringify(row.metadata):'';
+    return '<tr>'+
+      '<td>'+escapeHtml(formatAuditTime(row.timestamp))+'</td>'+
+      '<td>'+escapeHtml(row.event_type||'')+'</td>'+
+      '<td>'+escapeHtml(row.related_record_id||'')+'</td>'+
+      '<td>'+escapeHtml(metadata)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+async function fetchAdminMetrics(){
+  if(!window.isStaffAuthenticated){
+    document.getElementById('auditStatus').textContent='Staff login required.';
+    return;
+  }
+  document.getElementById('auditStatus').textContent='Loading...';
+  try{
+    var client=await getSupabaseClient();
+    var sessionResult=await client.auth.getSession();
+    if(sessionResult.error)throw sessionResult.error;
+    if(!sessionResult.data.session){
+      setStaffSession(null);
+      document.getElementById('auditStatus').textContent='Staff session expired.';
+      return;
+    }
+
+    var requestsResult=await client.from('requests').select('*',{count:'exact'});
+    if(requestsResult.error)throw requestsResult.error;
+    var requestRows=requestsResult.data||[];
+    var openCount=requestRows.filter(function(row){
+      return !['resolved','closed','complete','completed'].includes(String(row.status||'').toLowerCase());
+    }).length;
+
+    var conversationResult=await client
+      .from('audit_logs')
+      .select('*',{count:'exact',head:true})
+      .or('event_type.ilike.%conversation%,event_type.ilike.%chat%');
+    if(conversationResult.error)throw conversationResult.error;
+
+    var auditResult=await client
+      .from('audit_logs')
+      .select('timestamp,event_type,related_record_id,metadata')
+      .order('timestamp',{ascending:false})
+      .limit(10);
+    if(auditResult.error)throw auditResult.error;
+    var auditRows=auditResult.data||[];
+
+    setMetric('metricConversations',conversationResult.count||0);
+    setMetric('metricOpenRequests',openCount);
+    setMetric('metricTopTopics',getTopTopic(requestRows));
+    setMetric('metricRecentActivity',auditRows.length);
+    renderAuditLogRows(auditRows);
+    document.getElementById('auditStatus').textContent='Showing latest 10 entries.';
+  }catch(err){
+    console.error('Admin metrics error:',err);
+    document.getElementById('auditStatus').textContent=err&&err.message?err.message:'Unable to load dashboard.';
+    setMetric('metricConversations','-');
+    setMetric('metricOpenRequests','-');
+    setMetric('metricTopTopics','-');
+    setMetric('metricRecentActivity','-');
+    renderAuditLogRows([]);
+  }
+}
+function postAnnouncement(){
   var title=document.getElementById('annTitle').value.trim();
   var body=document.getElementById('annBody').value.trim();
   var type=document.getElementById('annType').value;
   if(!title||!body){alert('Please fill in title and message.');return;}
-  try{
-    var res=await fetch('/api/announcements',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title:title,body:body,type:type})
-    });
-    var data=await res.json();
-    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to create announcement');
-    upsertAnnouncementRecord(data.announcement);
-    document.getElementById('annTitle').value='';
-    document.getElementById('annBody').value='';
-    showToast('Announcement posted!');
-  }catch(err){
-    console.error('Announcement create error:',err);
-    alert('Unable to post announcement right now. Please try again.');
-  }
-}async function addRequest(){
+  var now=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  announcements.unshift({id:Date.now(),type:type,title:title,body:body,date:now});
+  document.getElementById('annTitle').value='';
+  document.getElementById('annBody').value='';
+  renderAnnouncements();updateHeroStats();
+  showToast('✓ Announcement posted!');
+}
+function addRequest(){
   var title=document.getElementById('reqTitle').value.trim();
   var desc=document.getElementById('reqDesc').value.trim();
   var cat=document.getElementById('reqCat').value;
   var status=document.getElementById('reqStatus').value;
   var addr=document.getElementById('reqAddr').value.trim();
   if(!title){alert('Please add a title.');return;}
-  try{
-    var res=await fetch('/api/requests',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title:title,desc:desc,cat:cat,status:status,addr:addr})
-    });
-    var data=await res.json();
-    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to create request');
-    var createdId=upsertRequestRecord(data.request);
-    document.getElementById('reqTitle').value='';
-    document.getElementById('reqDesc').value='';
-    document.getElementById('reqAddr').value='';
-    showToast('Request '+createdId+' logged!');
-    return;
-  }catch(err){
-    console.error('Request create error:',err);
-    alert('Unable to log request right now. Please try again.');
-    return;
-  }
+  var id='MGN-'+String(Math.floor(Math.random()*9000)+1000);
+  var now=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  requests.unshift({id:id,title:title,desc:desc+(addr?' - '+addr:''),cat:cat,status:status,date:now});
+  document.getElementById('reqTitle').value='';
+  document.getElementById('reqDesc').value='';
+  document.getElementById('reqAddr').value='';
+  renderRequests();showToast('✓ Request '+id+' logged!');
+}
+function formatRequestDate(value){
+  if(!value)return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  var parsed=new Date(value);
+  if(Number.isNaN(parsed.getTime()))return String(value);
+  return parsed.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function normalizeCreatedRequestRecord(record){
+  if(!record)return null;
+  var trackingNumber=record.tracking_number||record.id||record.trackingNumber||'';
+  var description=record.description||record.desc||'';
+  var address=record.address||record.addr||'';
+  var desc=description;
+  if(address)desc=desc?desc+' - '+address:address;
+  return {
+    id:trackingNumber||'MGN-'+String(Math.floor(Math.random()*9000)+1000),
+    title:record.title||'Untitled request',
+    desc:desc,
+    cat:record.category||record.cat||'Other',
+    status:record.status||'open',
+    date:formatRequestDate(record.created_at||record.date)
+  };
 }
 function autoAddRequest(data){
-  return upsertRequestRecord(data);
+  var normalized=normalizeCreatedRequestRecord(data);
+  if(!normalized)return '';
+  requests=[normalized].concat(requests.filter(function(existing){return existing.id!==normalized.id;}));
+  renderRequests();
+  return normalized.id;
 }
 function escapeHtml(text){
   return String(text)
@@ -525,6 +740,9 @@ function addMessage(role,text){
   div.className='msg '+role;
   div.innerHTML='<div class="msg-avatar">'+(role==='bot'?'M':'R')+'</div><div class="msg-bubble">'+safeText+'</div>';
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function updateChatUI(text){
+  addMessage('bot',text);
 }
 function showTyping(){
   var msgs=document.getElementById('messages');
@@ -557,28 +775,32 @@ async function sendMessage(){
         previousResponseId:lastResponseId
       })
     });
-    var data=await res.json();
+    const data=await res.json();
     responsePayload=data;
-    if(!res.ok){
-      console.error('API Error payload:',data);
-      throw new Error(data&&data.error?data.error:'Request failed');
-    }
     removeTyping();
-    var reply=data&&typeof data.reply==='string'?data.reply:'';
-    if(!reply)reply="I'm having trouble right now. Please call Borough Hall at (856) 783-1520.";
-    if(data&&typeof data.responseId==='string'&&data.responseId){
-      lastResponseId=data.responseId;
+    if(data&&(data.success||(!Object.prototype.hasOwnProperty.call(data,'success')&&typeof data.reply==='string'))){
+      var reply=typeof data.reply==='string'?data.reply:'';
+      if(!reply)reply="I'm having trouble right now. Please call Borough Hall at (856) 783-1520.";
+      if(typeof data.responseId==='string'&&data.responseId){
+        lastResponseId=data.responseId;
+      }
+      if(data.createdRequest){
+        var newId=autoAddRequest(data.createdRequest);
+        if(newId){
+          reply=reply.replace(/MGN-\d{4}/g,newId);
+        }
+      }
+      convHistory.push({role:'assistant',content:reply});
+      updateChatUI(reply);
+    }else{
+      console.error('API Error:',data&&data.error,data&&data.message);
+      var message=data&&typeof data.message==='string'?data.message:"I'm having trouble connecting right now. Please try again or call Borough Hall at (856) 783-1520.";
+      updateChatUI(message);
     }
-    if(data&&data.createdRequest){
-      var newId=autoAddRequest(data.createdRequest);
-      reply=reply.replace(/MGN-\d{4}/g,newId);
-    }
-    convHistory.push({role:'assistant',content:reply});
-    addMessage('bot',reply);
   }catch(err){
     removeTyping();
     if(responsePayload)console.error('API Error payload:',responsePayload);
-    addMessage('bot',"I'm having trouble connecting right now. Please try again or call Borough Hall at (856) 783-1520.");
+    updateChatUI("I'm having trouble connecting right now. Please try again or call Borough Hall at (856) 783-1520.");
     console.error('API Error:',err);
   }
   isLoading=false;
@@ -588,7 +810,7 @@ function showToast(msg){
   var t=document.createElement('div');t.className='toast';t.textContent=msg;
   document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
 }
-renderAnnouncements();loadAnnouncements();loadRequests();updateHeroStats();
+renderAnnouncements();renderRequests();updateHeroStats();initStaffAuth();
 </script>
 </body>
 </html>

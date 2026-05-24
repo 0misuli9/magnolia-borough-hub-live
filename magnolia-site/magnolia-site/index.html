@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Borough of Magnolia — Community Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --green-dark:#1b4332;--green:#2d6a4f;--green-mid:#40916c;--green-light:#d8f3dc;--green-pale:#f0faf2;
+    --gold:#c8960c;--gold-bright:#f0c030;--gold-light:#fef3c7;--gold-pale:#fffbeb;
+    --white:#ffffff;--off-white:#f8faf9;--text:#1a2e1f;--text-mid:#4a6651;--text-light:#8aab92;
+    --border:#c8e6d0;--red:#b91c1c;--shadow:0 2px 14px rgba(27,67,50,0.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  .gold-stripe{height:5px;background:linear-gradient(90deg,var(--gold-bright),var(--gold),var(--gold-bright));}
+  .header{background:linear-gradient(135deg,var(--green-dark) 0%,var(--green) 60%,var(--green-mid) 100%);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 3px 18px rgba(27,67,50,0.30);}
+  .header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:68px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .seal{width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#fff 0%,#e8f5e9 40%,#c8e6c9 100%);border-radius:50%;border:3px solid var(--gold-bright);box-shadow:0 0 0 2px var(--green-dark),0 4px 12px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .seal-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .seal-flower{font-size:20px;line-height:1;}
+  .seal-text{font-size:5px;font-weight:800;color:var(--green-dark);letter-spacing:0.3px;text-transform:uppercase;margin-top:1px;}
+  .brand-text h1{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:white;line-height:1.2;}
+  .brand-text p{font-size:10px;color:rgba(255,255,255,0.70);text-transform:uppercase;letter-spacing:1.2px;margin-top:1px;}
+  .admin-btn{background:rgba(255,255,255,0.12);border:1.5px solid rgba(240,192,48,0.6);color:var(--gold-bright);padding:6px 14px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;white-space:nowrap;}
+  .admin-btn:hover{background:rgba(240,192,48,0.18);}
+  .admin-btn.active{background:var(--gold-bright);color:var(--green-dark);}
+  .gold-divider{height:4px;background:linear-gradient(90deg,var(--gold-bright),var(--gold),var(--gold-bright));}
+  .nav-tabs{background:white;border-bottom:2px solid var(--border);padding:0 20px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+  .nav-inner{max-width:960px;margin:0 auto;display:flex;}
+  .tab{padding:13px 18px;background:transparent;border:none;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;display:flex;align-items:center;gap:6px;margin-bottom:-2px;white-space:nowrap;}
+  .tab:hover{color:var(--green);background:var(--green-pale);}
+  .tab.active{color:var(--green-dark);border-bottom-color:var(--gold-bright);font-weight:700;}
+  .badge{background:var(--red);color:white;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;}
+  .main{max-width:960px;margin:0 auto;padding:24px 20px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .hero{background:linear-gradient(135deg,var(--green-dark) 0%,var(--green) 50%,var(--green-mid) 100%);border-radius:16px;padding:36px 32px;margin-bottom:24px;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(27,67,50,0.25);}
+  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(240,192,48,0.08);border-radius:50%;}
+  .hero::after{content:'';position:absolute;bottom:-60px;left:-20px;width:160px;height:160px;background:rgba(255,255,255,0.04);border-radius:50%;}
+  .hero-content{position:relative;z-index:1;}
+  .hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(240,192,48,0.20);border:1px solid rgba(240,192,48,0.4);color:var(--gold-bright);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+  .hero h2{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:white;line-height:1.25;margin-bottom:10px;}
+  .hero p{font-size:14px;color:rgba(255,255,255,0.80);line-height:1.65;max-width:520px;margin-bottom:22px;}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .hero-btn-primary{background:var(--gold-bright);color:var(--green-dark);border:none;padding:11px 22px;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .hero-btn-primary:hover{background:#f5d040;transform:translateY(-1px);}
+  .hero-btn-secondary{background:rgba(255,255,255,0.12);color:white;border:1.5px solid rgba(255,255,255,0.35);padding:11px 22px;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .hero-btn-secondary:hover{background:rgba(255,255,255,0.20);}
+  .hero-stats{display:flex;gap:24px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.12);flex-wrap:wrap;}
+  .hero-stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-bright);}
+  .hero-stat-label{font-size:11px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:0.8px;margin-top:1px;}
+  .lookup-bar{background:white;border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .lookup-bar label{font-size:13px;font-weight:600;color:var(--text-mid);white-space:nowrap;}
+  .lookup-input{flex:1;min-width:160px;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;text-transform:uppercase;letter-spacing:1px;}
+  .lookup-input:focus{border-color:var(--green-mid);background:white;}
+  .lookup-btn{background:linear-gradient(135deg,var(--green),var(--green-dark));border:none;border-radius:8px;padding:10px 20px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .lookup-btn:hover{transform:translateY(-1px);}
+  .lookup-result{width:100%;padding:14px 16px;border-radius:8px;font-size:13px;line-height:1.6;display:none;}
+  .lookup-result.found{background:var(--green-pale);border:1px solid var(--green-light);color:var(--green-dark);}
+  .lookup-result.notfound{background:#fef2f2;border:1px solid #fecaca;color:var(--red);}
+  .chat-container{display:flex;flex-direction:column;height:calc(100vh - 420px);min-height:420px;background:white;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
+  .chat-header{padding:14px 18px;background:linear-gradient(135deg,var(--green-dark),var(--green));border-bottom:3px solid var(--gold-bright);display:flex;align-items:center;gap:10px;}
+  .ai-dot{width:9px;height:9px;background:var(--gold-bright);border-radius:50%;box-shadow:0 0 0 3px rgba(240,192,48,0.3);animation:pulse 2s infinite;flex-shrink:0;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .chat-header-text h3{font-family:'Playfair Display',serif;font-size:14px;color:white;}
+  .chat-header-text p{font-size:11px;color:rgba(255,255,255,0.70);}
+  .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--green-pale);scroll-behavior:smooth;}
+  .messages::-webkit-scrollbar{width:3px;}
+  .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .msg{display:flex;gap:8px;animation:fadeUp 0.3s ease;}
+  .msg.user{flex-direction:row-reverse;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+  .msg.bot .msg-avatar{background:linear-gradient(135deg,var(--green-dark),var(--green-mid));color:white;border:2px solid var(--gold-bright);}
+  .msg.user .msg-avatar{background:var(--text-mid);color:white;}
+  .msg-bubble{max-width:80%;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.65;}
+  .msg.bot .msg-bubble{background:white;border:1px solid var(--border);color:var(--text);border-top-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .msg.user .msg-bubble{background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;border-top-right-radius:4px;}
+  .typing-indicator{display:flex;gap:4px;align-items:center;padding:3px 0;}
+  .typing-indicator span{width:5px;height:5px;background:var(--green-mid);border-radius:50%;animation:bounce 1.2s infinite;}
+  .typing-indicator span:nth-child(2){animation-delay:0.2s}
+  .typing-indicator span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .quick-prompts{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px;background:white;border-top:1px solid var(--border);}
+  .qp{background:var(--gold-pale);border:1.5px solid var(--gold-bright);color:var(--green-dark);font-size:11px;font-weight:700;padding:5px 12px;border-radius:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .qp:hover{background:var(--gold-light);transform:translateY(-1px);}
+  .chat-input-area{padding:12px 16px;background:white;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;}
+  .chat-input{flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:24px;padding:10px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+  .chat-input:focus{border-color:var(--green-mid);background:white;}
+  .chat-input::placeholder{color:var(--text-light);}
+  .send-btn{background:linear-gradient(135deg,var(--green),var(--green-dark));border:none;border-radius:50%;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;box-shadow:0 2px 8px rgba(27,67,50,0.3);}
+  .send-btn:hover{transform:scale(1.08);}
+  .send-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+  .send-btn svg{width:17px;height:17px;fill:white;}
+  .section-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--green-dark);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--gold-bright),transparent);}
+  .announcement-card{background:white;border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:12px;border-left:4px solid var(--green-mid);box-shadow:var(--shadow);transition:all 0.2s;}
+  .announcement-card:hover{box-shadow:0 4px 20px rgba(27,67,50,0.13);}
+  .announcement-card.urgent{border-left-color:var(--red);}
+  .announcement-card.event{border-left-color:var(--gold-bright);}
+  .ann-meta{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
+  .ann-tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.8px;}
+  .tag-urgent{background:#fee2e2;color:var(--red);}
+  .tag-info{background:var(--green-light);color:var(--green-dark);}
+  .tag-event{background:var(--gold-light);color:#92400e;}
+  .ann-date{font-size:11px;color:var(--text-light);}
+  .ann-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:5px;}
+  .ann-body{font-size:13px;color:var(--text-mid);line-height:1.65;}
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .stat-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-bright),var(--gold));}
+  .stat-num{font-family:'Playfair Display',serif;font-size:28px;color:var(--green-dark);font-weight:700;}
+  .stat-label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+  .requests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+  .request-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
+  .req-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
+  .req-id{font-size:10px;color:var(--green-mid);font-weight:700;letter-spacing:1px;font-family:monospace;}
+  .req-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+  .status-open{background:var(--gold-light);color:#92400e;}
+  .status-progress{background:var(--green-light);color:var(--green-dark);}
+  .status-resolved{background:#f0f0f0;color:#888;}
+  .req-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .req-desc{font-size:12px;color:var(--text-mid);line-height:1.5;margin-bottom:10px;}
+  .req-footer{display:flex;justify-content:space-between;align-items:center;}
+  .req-cat{font-size:11px;color:var(--text-light);}
+  .req-date{font-size:11px;color:var(--text-light);}
+  .admin-panel{background:white;border:1.5px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .admin-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green-dark),var(--green-mid),var(--gold-bright));}
+  .admin-panel h2{font-family:'Playfair Display',serif;font-size:17px;color:var(--green-dark);margin-bottom:16px;margin-top:6px;}
+  .form-group{margin-bottom:12px;}
+  .form-label{display:block;font-size:11px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+  .form-input,.form-select,.form-textarea{width:100%;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green-mid);background:white;}
+  .form-textarea{resize:vertical;min-height:75px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .submit-btn{background:linear-gradient(135deg,var(--green),var(--green-dark));border:none;border-radius:8px;padding:11px 24px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(27,67,50,0.25);}
+  .submit-btn:hover{transform:translateY(-1px);}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text-light);}
+  .empty-state .icon{font-size:38px;margin-bottom:10px;}
+  .empty-state p{font-size:13px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 16px rgba(27,67,50,0.35);animation:slideIn 0.3s ease,fadeOut 0.3s ease 2.5s forwards;}
+  @keyframes slideIn{from{transform:translateX(120px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes fadeOut{to{opacity:0;transform:translateX(120px)}}
+  @media(max-width:640px){
+    .hero{padding:24px 18px;}.hero h2{font-size:22px;}.hero-stats{gap:16px;}
+    .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}
+    .main{padding:16px 14px;}.tab{padding:11px 12px;font-size:12px;}
+    .brand-text h1{font-size:13px;}.brand-text p{display:none;}
+    .chat-container{height:calc(100vh - 380px);min-height:380px;}
+    .hero-actions{flex-direction:column;}
+    .lookup-bar{flex-direction:column;align-items:stretch;}.lookup-btn{width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="gold-stripe"></div>
+<div class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="seal"><div class="seal-inner"><span class="seal-flower">🌸</span><span class="seal-text">Magnolia NJ</span></div></div>
+      <div class="brand-text">
+        <h1>Borough of Magnolia</h1>
+        <p>Camden County · New Jersey · Est. 1915</p>
+      </div>
+    </div>
+    <button class="admin-btn" id="adminToggle" onclick="toggleAdmin()">⚙ Staff Login</button>
+  </div>
+</div>
+<div class="gold-divider"></div>
+<div class="nav-tabs">
+  <div class="nav-inner">
+    <button class="tab active" onclick="switchTab('chat',this)">🤖 AI Assistant</button>
+    <button class="tab" onclick="switchTab('announcements',this)">📢 Announcements</button>
+    <button class="tab" onclick="switchTab('requests',this)">🎫 Service Requests <span class="badge" id="openCount">0</span></button>
+  </div>
+</div>
+<div class="main">
+  <div class="panel active" id="chat">
+    <div class="hero">
+      <div class="hero-content">
+        <div class="hero-tag">🌸 Borough of Magnolia · Official Portal</div>
+        <h2>Your Borough.<br/>At Your Fingertips.</h2>
+        <p>Get instant answers about services, permits, and schedules — or report an issue directly to borough staff. Available 24 hours a day, 7 days a week.</p>
+        <div class="hero-actions">
+          <button class="hero-btn-primary" onclick="scrollToChat()">💬 Chat with AI Assistant</button>
+          <button class="hero-btn-secondary" onclick="switchTab('requests',document.querySelectorAll('.tab')[2]);setTimeout(()=>document.getElementById('lookupInput').focus(),100)">🔍 Check Request Status</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
+          <div class="hero-stat"><div class="hero-stat-num" id="heroOpen">0</div><div class="hero-stat-label">Open Requests</div></div>
+          <div class="hero-stat"><div class="hero-stat-num" id="heroAnn">3</div><div class="hero-stat-label">Active Notices</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-container" id="chatContainer">
+      <div class="chat-header">
+        <div class="ai-dot"></div>
+        <div class="chat-header-text">
+          <h3>Magnolia Borough AI Assistant</h3>
+          <p>Ask anything · Report issues · Get help instantly</p>
+        </div>
+      </div>
+      <div class="messages" id="messages">
+        <div class="msg bot">
+          <div class="msg-avatar">M</div>
+          <div class="msg-bubble">👋 Welcome to the Borough of Magnolia! I'm your AI assistant, here any time of day.<br><br>I can answer questions about borough services, permits, and schedules — and if something needs attention, I can log a service request for you right here.<br><br>How can I help you today?</div>
+        </div>
+      </div>
+      <div class="quick-prompts">
+        <span class="qp" onclick="quickSend('When is bulk trash pickup?')">🗑 Bulk trash</span>
+        <span class="qp" onclick="quickSend('How do I get a permit?')">📋 Permits</span>
+        <span class="qp" onclick="quickSend('When is the next council meeting?')">🏛 Council meeting</span>
+        <span class="qp" onclick="quickSend('I want to report a pothole')">🛣 Report issue</span>
+      </div>
+      <div class="chat-input-area">
+        <input class="chat-input" id="chatInput" placeholder="Ask anything about Magnolia Borough..." onkeydown="handleKey(event)"/>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="announcements">
+    <h2 class="section-title">Borough Announcements</h2>
+    <div id="adminPostForm" style="display:none">
+      <div class="admin-panel">
+        <h2>📢 Post New Announcement</h2>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="annTitle" placeholder="Announcement title..."/></div>
+          <div class="form-group"><label class="form-label">Type</label>
+            <select class="form-select" id="annType">
+              <option value="info">ℹ️ General Info</option>
+              <option value="urgent">🚨 Urgent</option>
+              <option value="event">📅 Event</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Message</label><textarea class="form-textarea" id="annBody" placeholder="Write your announcement..."></textarea></div>
+        <button class="submit-btn" onclick="postAnnouncement()">Post Announcement</button>
+      </div>
+    </div>
+    <div id="annList"></div>
+  </div>
+  <div class="panel" id="requests">
+    <div class="lookup-bar">
+      <label>🔍 Check Request Status:</label>
+      <input class="lookup-input" id="lookupInput" placeholder="Enter tracking number e.g. MGN-1234" maxlength="8"/>
+      <button class="lookup-btn" onclick="lookupTicket()">Check Status</button>
+      <div class="lookup-result" id="lookupResult"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statOpen">0</div><div class="stat-label">Open</div></div>
+      <div class="stat-card"><div class="stat-num" id="statProgress">0</div><div class="stat-label">In Progress</div></div>
+      <div class="stat-card"><div class="stat-num" id="statResolved">0</div><div class="stat-label">Resolved</div></div>
+    </div>
+    <div id="adminRequestPanel" style="display:none">
+      <div class="admin-panel">
+        <h2>🎫 Log Service Request</h2>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="reqTitle" placeholder="e.g. Pothole on Elm Street"/></div>
+          <div class="form-group"><label class="form-label">Category</label>
+            <select class="form-select" id="reqCat">
+              <option>🛣️ Roads & Infrastructure</option>
+              <option>💡 Utilities & Lighting</option>
+              <option>🌳 Parks & Public Spaces</option>
+              <option>🗑️ Sanitation & Trash</option>
+              <option>🔊 Noise & Safety</option>
+              <option>📋 Permits & Zoning</option>
+              <option>❓ Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="reqDesc" placeholder="Describe the issue..."></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Status</label>
+            <select class="form-select" id="reqStatus">
+              <option value="open">Open</option>
+              <option value="progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Address / Location</label><input class="form-input" id="reqAddr" placeholder="e.g. 100 West Evesham Ave"/></div>
+        </div>
+        <button class="submit-btn" onclick="addRequest()">Log Request</button>
+      </div>
+    </div>
+    <h2 class="section-title">All Requests</h2>
+    <div id="reqList"></div>
+  </div>
+</div>
+<script>
+let isAdmin=false;
+let announcements=[
+  {id:1,type:'urgent',title:'Water Main Maintenance — West Evesham Ave',body:'Scheduled water service interruption on West Evesham Ave between Holly and Magnolia Ave, Thursday March 26 from 9AM–2PM. Residents may experience reduced pressure.',date:'March 25, 2026'},
+  {id:2,type:'event',title:'Borough Council Meeting — April 7th',body:'The next regular council meeting will be held Monday, April 7th at 7:00 PM in Borough Hall. Public comment period begins at 7:30 PM. All residents welcome.',date:'March 23, 2026'},
+  {id:3,type:'info',title:'Spring Bulk Trash Pickup Schedule',body:'Spring bulk trash pickup begins the week of April 14th. Items must be placed curbside by 7AM on your scheduled day. Electronics and hazardous materials are not accepted.',date:'March 20, 2026'},
+];
+let requests=[];
+let convHistory=[];
+let lastResponseId=null;
+let isLoading=false;
+const REQUEST_CATEGORY_LABELS={
+  'Roads & Infrastructure':'Roads & Infrastructure',
+  'Utilities & Lighting':'Utilities & Lighting',
+  'Parks & Public Spaces':'Parks & Public Spaces',
+  'Sanitation & Trash':'Sanitation & Trash',
+  'Noise & Safety':'Noise & Safety',
+  'Permits & Zoning':'Permits & Zoning',
+  'Other':'Other'
+};
+
+function normalizeRequestCategory(cat){
+  if(!cat)return 'Other';
+  return REQUEST_CATEGORY_LABELS[cat]||cat;
+}
+function formatRequestDate(value){
+  if(!value)return '';
+  var parsed=new Date(value);
+  if(Number.isNaN(parsed.getTime()))return String(value);
+  return parsed.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function normalizeRequestRecord(record){
+  if(!record)return null;
+  var trackingNumber=record.tracking_number||record.id||record.trackingNumber||'';
+  var description=record.description||record.desc||'';
+  var address=record.address||record.addr||'';
+  var desc=description;
+  if(address)desc=desc?desc+' - '+address:address;
+  return {
+    id:trackingNumber,
+    trackingNumber:trackingNumber,
+    title:record.title||'Untitled request',
+    desc:desc,
+    cat:normalizeRequestCategory(record.category||record.cat),
+    status:record.status||'open',
+    date:formatRequestDate(record.created_at||record.date),
+    addr:address,
+    raw:record
+  };
+}
+function upsertRequestRecord(record){
+  var normalized=normalizeRequestRecord(record);
+  if(!normalized)return '';
+  requests=[normalized].concat(requests.filter(function(existing){return existing.id!==normalized.id;}));
+  renderRequests();
+  return normalized.id;
+}
+function formatAnnouncementDate(value){
+  if(!value)return '';
+  var parsed=new Date(value);
+  if(Number.isNaN(parsed.getTime()))return String(value);
+  return parsed.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+function normalizeAnnouncementRecord(record){
+  if(!record)return null;
+  var type=String(record.type||'info').trim();
+  if(['urgent','event','info'].indexOf(type)===-1)type='info';
+  return {
+    id:record.id||record.created_at||Date.now(),
+    type:type,
+    title:record.title||'',
+    body:record.body||'',
+    date:formatAnnouncementDate(record.created_at||record.date),
+    raw:record
+  };
+}
+function upsertAnnouncementRecord(record){
+  var normalized=normalizeAnnouncementRecord(record);
+  if(!normalized)return '';
+  announcements=[normalized].concat(announcements.filter(function(existing){return String(existing.id)!==String(normalized.id);}));
+  renderAnnouncements();
+  updateHeroStats();
+  return normalized.id;
+}
+async function loadAnnouncements(){
+  try{
+    var res=await fetch('/api/announcements');
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to load announcements');
+    announcements=(data.announcements||[]).map(normalizeAnnouncementRecord).filter(Boolean);
+  }catch(err){
+    console.error('Announcement load error:',err);
+  }
+  renderAnnouncements();
+  updateHeroStats();
+}
+async function loadRequests(){
+  try{
+    var res=await fetch('/api/requests');
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to load requests');
+    requests=(data.requests||[]).map(normalizeRequestRecord).filter(Boolean);
+  }catch(err){
+    console.error('Request load error:',err);
+    requests=[];
+  }
+  renderRequests();
+}
+
+function updateHeroStats(){
+  document.getElementById('heroOpen').textContent=requests.filter(r=>r.status==='open').length;
+  document.getElementById('heroAnn').textContent=announcements.length;
+}
+function renderAnnouncements(){
+  const list=document.getElementById('annList');
+  if(!announcements.length){list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No announcements yet.</p></div>';return;}
+  list.innerHTML=announcements.map(a=>`<div class="announcement-card ${a.type}"><div class="ann-meta"><span class="ann-tag tag-${a.type}">${a.type==='urgent'?'🚨 Urgent':a.type==='event'?'📅 Event':'ℹ️ Info'}</span><span class="ann-date">${a.date}</span></div><div class="ann-title">${a.title}</div><div class="ann-body">${a.body}</div></div>`).join('');
+}
+function renderRequests(){
+  const open=requests.filter(r=>r.status==='open').length;
+  const prog=requests.filter(r=>r.status==='progress').length;
+  const res=requests.filter(r=>r.status==='resolved').length;
+  document.getElementById('statOpen').textContent=open;
+  document.getElementById('statProgress').textContent=prog;
+  document.getElementById('statResolved').textContent=res;
+  document.getElementById('openCount').textContent=open+prog;
+  updateHeroStats();
+  const list=document.getElementById('reqList');
+  if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
+  list.innerHTML='<div class="requests-grid">'+requests.map(r=>`<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${r.status}">${r.status==='progress'?'In Progress':r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div></div>`).join('')+'</div>';
+}
+async function lookupTicket(){
+  const input=document.getElementById('lookupInput').value.trim().toUpperCase();
+  const result=document.getElementById('lookupResult');
+  if(!input){result.style.display='none';return;}
+  const id=input.startsWith('MGN-')?input:'MGN-'+input;
+  result.style.display='block';
+  try{
+    const res=await fetch('/api/requests?tracking_number='+encodeURIComponent(id));
+    const data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error:'Request not found');
+    const ticket=normalizeRequestRecord(data.request);
+    const s=ticket.status==='progress'?'In Progress':ticket.status.charAt(0).toUpperCase()+ticket.status.slice(1);
+    result.className='lookup-result found';
+    result.innerHTML='&#9989; <strong>Request Found - '+ticket.id+'</strong><br/><strong>Issue:</strong> '+ticket.title+'<br/><strong>Status:</strong> '+s+'<br/><strong>Category:</strong> '+ticket.cat+'<br/><strong>Submitted:</strong> '+ticket.date;
+    return;
+  }catch(err){
+    result.className='lookup-result notfound';
+    result.innerHTML='&#10060; No request found for <strong>'+id+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
+    return;
+  }
+}
+document.getElementById('lookupInput').addEventListener('keydown',function(e){if(e.key==='Enter')lookupTicket();});
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  document.getElementById(name).classList.add('active');
+}
+function scrollToChat(){document.getElementById('chatContainer').scrollIntoView({behavior:'smooth'});setTimeout(function(){document.getElementById('chatInput').focus();},400);}
+function toggleAdmin(){
+  isAdmin=!isAdmin;
+  var btn=document.getElementById('adminToggle');
+  btn.textContent=isAdmin?'✕ Exit Staff View':'⚙ Staff Login';
+  btn.classList.toggle('active',isAdmin);
+  document.getElementById('adminPostForm').style.display=isAdmin?'block':'none';
+  document.getElementById('adminRequestPanel').style.display=isAdmin?'block':'none';
+}
+async function postAnnouncement(){
+  var title=document.getElementById('annTitle').value.trim();
+  var body=document.getElementById('annBody').value.trim();
+  var type=document.getElementById('annType').value;
+  if(!title||!body){alert('Please fill in title and message.');return;}
+  try{
+    var res=await fetch('/api/announcements',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title:title,body:body,type:type})
+    });
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to create announcement');
+    upsertAnnouncementRecord(data.announcement);
+    document.getElementById('annTitle').value='';
+    document.getElementById('annBody').value='';
+    showToast('Announcement posted!');
+  }catch(err){
+    console.error('Announcement create error:',err);
+    alert('Unable to post announcement right now. Please try again.');
+  }
+}async function addRequest(){
+  var title=document.getElementById('reqTitle').value.trim();
+  var desc=document.getElementById('reqDesc').value.trim();
+  var cat=document.getElementById('reqCat').value;
+  var status=document.getElementById('reqStatus').value;
+  var addr=document.getElementById('reqAddr').value.trim();
+  if(!title){alert('Please add a title.');return;}
+  try{
+    var res=await fetch('/api/requests',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title:title,desc:desc,cat:cat,status:status,addr:addr})
+    });
+    var data=await res.json();
+    if(!res.ok)throw new Error(data&&data.error?data.error:'Failed to create request');
+    var createdId=upsertRequestRecord(data.request);
+    document.getElementById('reqTitle').value='';
+    document.getElementById('reqDesc').value='';
+    document.getElementById('reqAddr').value='';
+    showToast('Request '+createdId+' logged!');
+    return;
+  }catch(err){
+    console.error('Request create error:',err);
+    alert('Unable to log request right now. Please try again.');
+    return;
+  }
+}
+function autoAddRequest(data){
+  return upsertRequestRecord(data);
+}
+function escapeHtml(text){
+  return String(text)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function addMessage(role,text){
+  var msgs=document.getElementById('messages');
+  var div=document.createElement('div');
+  var safeText=escapeHtml(text).replace(/\n/g,'<br/>');
+  div.className='msg '+role;
+  div.innerHTML='<div class="msg-avatar">'+(role==='bot'?'M':'R')+'</div><div class="msg-bubble">'+safeText+'</div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(){
+  var msgs=document.getElementById('messages');
+  var div=document.createElement('div');
+  div.className='msg bot';div.id='typing';
+  div.innerHTML='<div class="msg-avatar">M</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping(){var t=document.getElementById('typing');if(t)t.remove();}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function quickSend(text){document.getElementById('chatInput').value=text;sendMessage();}
+async function sendMessage(){
+  var input=document.getElementById('chatInput');
+  var text=input.value.trim();
+  var responsePayload=null;
+  if(!text||isLoading)return;
+  input.value='';isLoading=true;
+  document.getElementById('sendBtn').disabled=true;
+  addMessage('user',text);
+  convHistory.push({role:'user',content:text});
+  showTyping();
+  try{
+    var res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        messages:convHistory,
+        previousResponseId:lastResponseId
+      })
+    });
+    var data=await res.json();
+    responsePayload=data;
+    if(!res.ok){
+      console.error('API Error payload:',data);
+      throw new Error(data&&data.error?data.error:'Request failed');
+    }
+    removeTyping();
+    var reply=data&&typeof data.reply==='string'?data.reply:'';
+    if(!reply)reply="I'm having trouble right now. Please call Borough Hall at (856) 783-1520.";
+    if(data&&typeof data.responseId==='string'&&data.responseId){
+      lastResponseId=data.responseId;
+    }
+    if(data&&data.createdRequest){
+      var newId=autoAddRequest(data.createdRequest);
+      reply=reply.replace(/MGN-\d{4}/g,newId);
+    }
+    convHistory.push({role:'assistant',content:reply});
+    addMessage('bot',reply);
+  }catch(err){
+    removeTyping();
+    if(responsePayload)console.error('API Error payload:',responsePayload);
+    addMessage('bot',"I'm having trouble connecting right now. Please try again or call Borough Hall at (856) 783-1520.");
+    console.error('API Error:',err);
+  }
+  isLoading=false;
+  document.getElementById('sendBtn').disabled=false;
+}
+function showToast(msg){
+  var t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
+}
+renderAnnouncements();loadAnnouncements();loadRequests();updateHeroStats();
+</script>
+</body>
+</html>

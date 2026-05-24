@@ -1,5 +1,15 @@
+import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+
 function sendJson(res, statusCode, payload) {
   res.status(statusCode).json(payload);
+}
+
+function validateAuth(req) {
+  const expectedSecret = process.env.ADMIN_SECRET;
+  const providedSecret = req.headers?.["x-admin-secret"];
+  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+
+  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
 }
 
 function normalizeBody(body) {
@@ -135,7 +145,7 @@ function buildRequestRecord(body, trackingNumber) {
     description: String(body.description || body.desc || "").trim(),
     category: String(body.category || body.cat || "Other").trim() || "Other",
     address: String(body.address || body.addr || "").trim(),
-    status: String(body.status || "open").trim() || "open",
+    status: "pending",
     created_at: new Date().toISOString(),
   };
 
@@ -172,6 +182,12 @@ export default async function handler(req, res) {
         return sendJson(res, 200, { request: records[0] });
       }
 
+      if (!validateAuth(req)) {
+        return sendJson(res, 401, {
+          error: "Unauthorized.",
+        });
+      }
+
       const records = await supabaseRequest(config, "?select=*&order=created_at.desc", {
         method: "GET",
         prefer: "return=minimal",
@@ -200,19 +216,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      const requestedTrackingNumber = String(body.tracking_number || "").trim().toUpperCase();
-      let trackingNumber = requestedTrackingNumber;
-
-      if (trackingNumber) {
-        const exists = await trackingNumberExists(config, trackingNumber);
-
-        if (exists) {
-          console.error("[api/requests] Tracking number collision", { trackingNumber });
-          return sendJson(res, 409, { error: "Tracking number already exists." });
-        }
-      } else {
-        trackingNumber = await createUniqueTrackingNumber(config);
-      }
+      const trackingNumber = await createUniqueTrackingNumber(config);
 
       console.log("[api/requests] Using tracking number", { trackingNumber });
 
@@ -225,6 +229,21 @@ export default async function handler(req, res) {
       const createdRequest = Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
 
       console.log("[api/requests] Created request record", createdRequest);
+
+      try {
+        await logAuditEvent(getServiceSupabaseClient(), {
+          eventType: "request_created",
+          actorId: null,
+          recordId: createdRequest?.tracking_number || trackingNumber,
+          metadata: {
+            category: createdRequest?.category || null,
+            status: createdRequest?.status || null,
+            hasAddress: Boolean(createdRequest?.address),
+          },
+        });
+      } catch (auditError) {
+        console.error("[api/requests] Failed to write audit log", auditError);
+      }
 
       return sendJson(res, 201, {
         request: createdRequest,

@@ -1,5 +1,15 @@
+import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+
 function sendJson(res, statusCode, payload) {
   res.status(statusCode).json(payload);
+}
+
+function validateAuth(req) {
+  const expectedSecret = process.env.ADMIN_SECRET;
+  const providedSecret = req.headers?.["x-admin-secret"];
+  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+
+  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
 }
 
 function normalizeBody(body) {
@@ -136,6 +146,12 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
+    if (!validateAuth(req)) {
+      return sendJson(res, 401, {
+        error: "Unauthorized.",
+      });
+    }
+
     const body = normalizeBody(req.body);
 
     console.log("[api/announcements] POST request", safeAnnouncementShape(body));
@@ -165,6 +181,20 @@ export default async function handler(req, res) {
         id: createdAnnouncement?.id || null,
         type: createdAnnouncement?.type || null,
       });
+
+      try {
+        await logAuditEvent(getServiceSupabaseClient(), {
+          eventType: "announcement_created",
+          actorId: null,
+          recordId: createdAnnouncement?.id || createdAnnouncement?.created_at || null,
+          metadata: {
+            type: createdAnnouncement?.type || null,
+            title: createdAnnouncement?.title || null,
+          },
+        });
+      } catch (auditError) {
+        console.error("[api/announcements] Failed to write audit log", auditError);
+      }
 
       return sendJson(res, 201, {
         announcement: createdAnnouncement,

@@ -6,3 +6,10 @@ node_modules
 *.pptx
 *.docx
 backup_schema.sql
+
+.env
+.env.*
+.vercel
+
+.vercel
+.env*.local

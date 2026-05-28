@@ -506,7 +506,11 @@ export default async function handler(req, res) {
     });
     try {
       createdRequest = await createServiceRequest(requestData);
-      reply = reply.replace(/MGN-\d{4}/g, createdRequest.tracking_number);
+      if (/MGN-\d{4}/.test(reply)) {
+        reply = reply.replace(/MGN-\d{4}/g, createdRequest.tracking_number);
+      } else {
+        reply = `${reply}\n\nYour tracking number is ${createdRequest.tracking_number}. You can check the status anytime in the Service Requests tab.`;
+      }
       await writeAuditEvent("request_created_from_chat", createdRequest.tracking_number, {
         source: "chat",
         category: createdRequest.category || null,

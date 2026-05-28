@@ -1247,7 +1247,11 @@ async function sendMessage(){
       if(data.createdRequest){
         var newId=autoAddRequest(data.createdRequest);
         if(newId){
-          reply=reply.replace(/MGN-\d{4}/g,newId);
+          if(/MGN-\d{4}/.test(reply)){
+            reply=reply.replace(/MGN-\d{4}/g,newId);
+          }else{
+            reply=reply+'\n\nYour tracking number is '+newId+'. You can check the status anytime in the Service Requests tab.';
+          }
         }
       }
       convHistory.push({role:'assistant',content:reply});

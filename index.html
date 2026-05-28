@@ -88,6 +88,7 @@
   .qp{background:var(--gold-pale);border:1.5px solid var(--gold-bright);color:var(--green-dark);font-size:11px;font-weight:700;padding:5px 12px;border-radius:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .qp:hover{background:var(--gold-light);transform:translateY(-1px);}
   .chat-input-area{padding:12px 16px;background:white;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;}
+  .privacy-note{padding:8px 16px;background:var(--gold-pale);border-top:1px solid var(--border);color:var(--text-mid);font-size:11px;line-height:1.4;}
   .chat-input{flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:24px;padding:10px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
   .chat-input:focus{border-color:var(--green-mid);background:white;}
   .chat-input::placeholder{color:var(--text-light);}
@@ -119,14 +120,18 @@
   .req-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
   .req-id{font-size:10px;color:var(--green-mid);font-weight:700;letter-spacing:1px;font-family:monospace;}
   .req-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
-  .status-open{background:var(--gold-light);color:#92400e;}
-  .status-progress{background:var(--green-light);color:var(--green-dark);}
+  .status-open,.status-pending{background:var(--gold-light);color:#92400e;}
+  .status-progress,.status-in_progress{background:var(--green-light);color:var(--green-dark);}
   .status-resolved{background:#f0f0f0;color:#888;}
   .req-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
   .req-desc{font-size:12px;color:var(--text-mid);line-height:1.5;margin-bottom:10px;}
   .req-footer{display:flex;justify-content:space-between;align-items:center;}
   .req-cat{font-size:11px;color:var(--text-light);}
   .req-date{font-size:11px;color:var(--text-light);}
+  .request-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+  .request-actions button{background:white;border:1px solid var(--border);border-radius:6px;color:var(--green-dark);cursor:pointer;font-size:11px;font-weight:700;padding:6px 8px;}
+  .request-actions button:hover{background:var(--green-pale);}
+  .request-filters{display:grid;grid-template-columns:1fr 180px auto;gap:10px;background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;box-shadow:var(--shadow);}
   .admin-panel{background:white;border:1.5px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
   .admin-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green-dark),var(--green-mid),var(--gold-bright));}
   .admin-panel h2{font-family:'Playfair Display',serif;font-size:17px;color:var(--green-dark);margin-bottom:16px;margin-top:6px;}
@@ -168,6 +173,12 @@
   .audit-panel{background:white;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;}
   .audit-panel-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);}
   .audit-panel-header h3{font-size:14px;color:var(--green-dark);}
+  .dashboard-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .dashboard-list{padding:12px 16px;font-size:12px;color:var(--text-mid);}
+  .dashboard-list-item{border-bottom:1px solid var(--border);padding:8px 0;}
+  .dashboard-list-item:last-child{border-bottom:none;}
+  .dashboard-list-title{font-weight:700;color:var(--text);margin-bottom:2px;}
+  .dashboard-list-meta{font-size:11px;color:var(--text-light);}
   .audit-table-wrap{overflow-x:auto;}
   .audit-table{width:100%;border-collapse:collapse;font-size:12px;}
   .audit-table th,.audit-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
@@ -176,7 +187,7 @@
   .audit-status{font-size:12px;color:var(--text-mid);}
   @media(max-width:640px){
     .hero{padding:24px 18px;}.hero h2{font-size:22px;}.hero-stats{gap:16px;}
-    .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}.metric-grid{grid-template-columns:1fr 1fr;}
+    .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}.metric-grid,.dashboard-lists,.request-filters{grid-template-columns:1fr;}
     .main{padding:16px 14px;}.tab{padding:11px 12px;font-size:12px;}
     .brand-text h1{font-size:13px;}.brand-text p{display:none;}
     .chat-container{height:calc(100vh - 380px);min-height:380px;}
@@ -217,18 +228,37 @@
   <div class="login-panel">
     <h2 id="loginTitle">Staff Login</h2>
     <p>Sign in with your borough staff account to manage announcements and service requests.</p>
+    <div id="staffPasswordPanel">
     <div class="form-group">
       <label class="form-label" for="staffEmail">Email</label>
       <input class="form-input" id="staffEmail" type="email" autocomplete="username" placeholder="staff@example.gov"/>
     </div>
     <div class="form-group">
       <label class="form-label" for="staffPassword">Password</label>
-      <input class="form-input" id="staffPassword" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')handleStaffLogin()"/>
+      <input class="form-input" id="staffPassword" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+    </div>
+    </div>
+    <div id="staffMfaPanel" style="display:none">
+      <div class="form-group">
+        <label class="form-label" for="staffMfaCode">Authenticator Code</label>
+        <input class="form-input" id="staffMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+      </div>
+    </div>
+    <div id="staffPasswordRecoveryPanel" style="display:none">
+      <div class="form-group">
+        <label class="form-label" for="staffNewPassword">New Password</label>
+        <input class="form-input" id="staffNewPassword" type="password" autocomplete="new-password" placeholder="New password"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="staffConfirmPassword">Confirm Password</label>
+        <input class="form-input" id="staffConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+      </div>
     </div>
     <div class="login-error" id="loginError" aria-live="polite"></div>
     <div class="login-actions">
+      <button class="login-cancel" id="passwordResetBtn" type="button" onclick="sendStaffPasswordReset()">Reset Password</button>
       <button class="login-cancel" type="button" onclick="hideLoginModal()">Cancel</button>
-      <button class="submit-btn" id="loginSubmit" type="button" onclick="handleStaffLogin()">Login</button>
+      <button class="submit-btn" id="loginSubmit" type="button" onclick="handleLoginPrimaryAction()">Login</button>
     </div>
   </div>
 </div>
@@ -255,27 +285,30 @@
         <div class="ai-dot"></div>
         <div class="chat-header-text">
           <h3>Magnolia Borough AI Assistant</h3>
-          <p>Ask anything · Report issues · Get help instantly</p>
+          <p>Ask questions and report non-emergency municipal issues. For emergencies, call 911.</p>
         </div>
       </div>
       <div class="messages" id="messages">
         <div class="msg bot">
           <div class="msg-avatar">M</div>
-          <div class="msg-bubble">👋 Welcome to the Borough of Magnolia! I'm your AI assistant, here any time of day.<br><br>I can answer questions about borough services, permits, and schedules — and if something needs attention, I can log a service request for you right here.<br><br>How can I help you today?</div>
+          <div class="msg-bubble">Welcome to the Borough of Magnolia. I can answer approved borough service questions and help log non-emergency service requests.<br><br>Do not submit emergencies or highly sensitive personal information here. For emergencies, call 911.<br><br>How can I help you today?</div>
         </div>
       </div>
       <div class="quick-prompts">
-        <span class="qp" onclick="quickSend('When is bulk trash pickup?')">🗑 Bulk trash</span>
-        <span class="qp" onclick="quickSend('How do I get a permit?')">📋 Permits</span>
-        <span class="qp" onclick="quickSend('When is the next council meeting?')">🏛 Council meeting</span>
-        <span class="qp" onclick="quickSend('I want to report a pothole')">🛣 Report issue</span>
+        <span class="qp" onclick="quickSend('When is bulk trash pickup?')">Bulk trash</span>
+        <span class="qp" onclick="quickSend('How do I get a permit?')">Permits</span>
+        <span class="qp" onclick="quickSend('When is the next council meeting?')">Council meeting</span>
+        <span class="qp" onclick="quickSend('I want to report a pothole')">Report issue</span>
+        <span class="qp" onclick="quickSend('Summarize open requests for staff review')">Staff: open requests</span>
+        <span class="qp" onclick="quickSend('Draft a concise borough announcement')">Staff: draft notice</span>
       </div>
       <div class="chat-input-area">
         <input class="chat-input" id="chatInput" placeholder="Ask anything about Magnolia Borough..." onkeydown="handleKey(event)"/>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send message">
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
+      <div class="privacy-note">Do not submit emergencies or highly sensitive personal information. For emergencies call 911; for urgent police, fire, or medical matters use official emergency channels.</div>
     </div>
   </div>
   <div class="panel" id="announcements">
@@ -333,7 +366,7 @@
           <div class="form-group"><label class="form-label">Status</label>
             <select class="form-select" id="reqStatus">
               <option value="open">Open</option>
-              <option value="progress">In Progress</option>
+              <option value="in_progress">In Progress</option>
               <option value="resolved">Resolved</option>
             </select>
           </div>
@@ -341,6 +374,17 @@
         </div>
         <button class="submit-btn" onclick="addRequest()">Log Request</button>
       </div>
+    </div>
+    <div id="staffRequestFilters" class="request-filters" style="display:none">
+      <input class="form-input" id="requestSearch" placeholder="Search tracking number, title, address, or category"/>
+      <select class="form-select" id="requestStatusFilter">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="closed">Closed</option>
+      </select>
+      <button class="lookup-btn" type="button" onclick="loadStaffRequests()">Apply</button>
     </div>
     <h2 class="section-title">All Requests</h2>
     <div id="reqList"></div>
@@ -352,7 +396,7 @@
       <h2>Staff Dashboard</h2>
       <p>Operational snapshot for borough staff.</p>
     </div>
-    <button class="login-cancel" type="button" onclick="fetchAdminMetrics()">Refresh</button>
+    <button class="login-cancel" type="button" onclick="refreshStaffData()">Refresh</button>
   </div>
   <div class="metric-grid">
     <div class="metric-card">
@@ -366,6 +410,16 @@
       <div class="metric-note">Requests awaiting action</div>
     </div>
     <div class="metric-card">
+      <div class="metric-label">In Progress</div>
+      <div class="metric-value" id="metricInProgressRequests">-</div>
+      <div class="metric-note">Requests being worked</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Resolved</div>
+      <div class="metric-value" id="metricResolvedRequests">-</div>
+      <div class="metric-note">Resolved request records</div>
+    </div>
+    <div class="metric-card">
       <div class="metric-label">Top Topics</div>
       <div class="metric-value" id="metricTopTopics">-</div>
       <div class="metric-note">Most common recent category</div>
@@ -374,6 +428,20 @@
       <div class="metric-label">Recent Activity</div>
       <div class="metric-value" id="metricRecentActivity">-</div>
       <div class="metric-note">Latest audit log entries</div>
+    </div>
+  </div>
+  <div class="dashboard-lists">
+    <div class="audit-panel">
+      <div class="audit-panel-header">
+        <h3>Latest Service Requests</h3>
+      </div>
+      <div class="dashboard-list" id="dashboardLatestRequests">No request data loaded.</div>
+    </div>
+    <div class="audit-panel">
+      <div class="audit-panel-header">
+        <h3>Active Announcements</h3>
+      </div>
+      <div class="dashboard-list" id="dashboardLatestAnnouncements">No announcement data loaded.</div>
     </div>
   </div>
   <div class="audit-panel">
@@ -402,26 +470,34 @@
 <script>
 window.isStaffAuthenticated=false;
 let staffSession=null;
+let staffProfile=null;
 let supabaseClient=null;
 let supabaseConfigPromise=null;
 let currentStaffView='resident';
-let announcements=[
-  {id:1,type:'urgent',title:'Water Main Maintenance — West Evesham Ave',body:'Scheduled water service interruption on West Evesham Ave between Holly and Magnolia Ave, Thursday March 26 from 9AM–2PM. Residents may experience reduced pressure.',date:'March 25, 2026'},
-  {id:2,type:'event',title:'Borough Council Meeting — April 7th',body:'The next regular council meeting will be held Monday, April 7th at 7:00 PM in Borough Hall. Public comment period begins at 7:30 PM. All residents welcome.',date:'March 23, 2026'},
-  {id:3,type:'info',title:'Spring Bulk Trash Pickup Schedule',body:'Spring bulk trash pickup begins the week of April 14th. Items must be placed curbside by 7AM on your scheduled day. Electronics and hazardous materials are not accepted.',date:'March 20, 2026'},
-];
-let requests=[
-  {id:'MGN-0041',title:'Pothole at Magnolia Ave & 3rd St',desc:'Large pothole near intersection, approximately 12" wide. Hazardous to vehicles.',cat:'🛣️ Roads & Infrastructure',status:'progress',date:'Mar 24'},
-  {id:'MGN-0040',title:'Streetlight Out — Holly Ave',desc:'Streetlight in front of 214 Holly Ave has been out for 3 days.',cat:'💡 Utilities & Lighting',status:'open',date:'Mar 23'},
-  {id:'MGN-0039',title:'Abandoned vehicle — Oak St',desc:'Silver sedan with no plates parked in front of 88 Oak St for over 2 weeks.',cat:'🔊 Noise & Safety',status:'resolved',date:'Mar 19'},
-];
+let staffLoginMode='password';
+let pendingMfaChallenge=null;
+let announcements=[];
+let requests=[];
+let dashboardSnapshot=null;
+let staffRefreshTimer=null;
 let convHistory=[];
 let lastResponseId=null;
 let isLoading=false;
 
 function updateHeroStats(){
-  document.getElementById('heroOpen').textContent=requests.filter(r=>r.status==='open').length;
+  document.getElementById('heroOpen').textContent=requests.filter(r=>!['resolved','closed','complete','completed'].includes(String(r.status||'').toLowerCase())).length;
   document.getElementById('heroAnn').textContent=announcements.length;
+}
+function normalizeUiStatus(status){
+  var value=String(status||'open').toLowerCase().replace(/-/g,'_');
+  if(value==='pending')return 'open';
+  if(value==='progress')return 'in_progress';
+  return ['open','in_progress','resolved','closed'].includes(value)?value:'open';
+}
+function statusLabel(status){
+  var value=normalizeUiStatus(status);
+  if(value==='in_progress')return 'In Progress';
+  return value.charAt(0).toUpperCase()+value.slice(1);
 }
 function renderAnnouncements(){
   const list=document.getElementById('annList');
@@ -430,7 +506,7 @@ function renderAnnouncements(){
 }
 function renderRequests(){
   const open=requests.filter(r=>r.status==='open').length;
-  const prog=requests.filter(r=>r.status==='progress').length;
+  const prog=requests.filter(r=>normalizeUiStatus(r.status)==='in_progress').length;
   const res=requests.filter(r=>r.status==='resolved').length;
   document.getElementById('statOpen').textContent=open;
   document.getElementById('statProgress').textContent=prog;
@@ -439,30 +515,52 @@ function renderRequests(){
   updateHeroStats();
   const list=document.getElementById('reqList');
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
-  list.innerHTML='<div class="requests-grid">'+requests.map(r=>`<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${r.status}">${r.status==='progress'?'In Progress':r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div></div>`).join('')+'</div>';
+  list.innerHTML='<div class="requests-grid">'+requests.map(function(r){
+    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" onclick="updateRequestStatus('${r.id}','open')">Open</button><button type="button" onclick="updateRequestStatus('${r.id}','in_progress')">In Progress</button><button type="button" onclick="updateRequestStatus('${r.id}','resolved')">Resolve</button></div>`:'';
+    return `<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
+  }).join('')+'</div>';
 }
-function lookupTicket(){
+async function lookupTicket(){
   const input=document.getElementById('lookupInput').value.trim().toUpperCase();
   const result=document.getElementById('lookupResult');
   if(!input){result.style.display='none';return;}
   const id=input.startsWith('MGN-')?input:'MGN-'+input;
-  const ticket=requests.find(r=>r.id===id);
   result.style.display='block';
-  if(ticket){
-    const s=ticket.status==='progress'?'In Progress':ticket.status.charAt(0).toUpperCase()+ticket.status.slice(1);
+  result.className='lookup-result found';
+  result.innerHTML='Checking '+escapeHtml(id)+'...';
+  try{
+    var res=await fetch('/api/requests?tracking_number='+encodeURIComponent(id));
+    var data=await res.json();
+    if(!res.ok||!data.request){
+      throw new Error(data&&data.error?data.error:'Request not found.');
+    }
+    autoAddRequest(data.request);
+    var ticket=normalizeCreatedRequestRecord(data.request);
+    const s=statusLabel(ticket.status);
     result.className='lookup-result found';
-    result.innerHTML='✅ <strong>Request Found - '+ticket.id+'</strong><br/><strong>Issue:</strong> '+ticket.title+'<br/><strong>Status:</strong> '+s+'<br/><strong>Category:</strong> '+ticket.cat+'<br/><strong>Submitted:</strong> '+ticket.date;
-  }else{
+    result.innerHTML='Found request '+escapeHtml(ticket.id)+'<br/><strong>Issue:</strong> '+escapeHtml(ticket.title)+'<br/><strong>Status:</strong> '+escapeHtml(s)+'<br/><strong>Category:</strong> '+escapeHtml(ticket.cat)+'<br/><strong>Submitted:</strong> '+escapeHtml(ticket.date);
+  }catch(err){
     result.className='lookup-result notfound';
-    result.innerHTML='❌ No request found for <strong>'+id+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
+    result.innerHTML='No request found for <strong>'+escapeHtml(id)+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
   }
 }
 document.getElementById('lookupInput').addEventListener('keydown',function(e){if(e.key==='Enter')lookupTicket();});
+document.getElementById('requestSearch').addEventListener('keydown',function(e){if(e.key==='Enter')loadStaffRequests();});
 function switchTab(name,el){
+  if(window.isStaffAuthenticated&&currentStaffView==='dashboard'){
+    currentStaffView='resident';
+    applyStaffViewMode();
+  }
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
   el.classList.add('active');
   document.getElementById(name).classList.add('active');
+  if(window.isStaffAuthenticated&&name==='requests'){
+    loadStaffRequests().catch(function(err){console.warn('Request load failed:',err.message||err);});
+  }
+  if(name==='announcements'){
+    loadAnnouncements(window.isStaffAuthenticated).catch(function(err){console.warn('Announcement load failed:',err.message||err);});
+  }
 }
 function scrollToChat(){document.getElementById('chatContainer').scrollIntoView({behavior:'smooth'});setTimeout(function(){document.getElementById('chatInput').focus();},400);}
 async function getSupabaseClient(){
@@ -486,10 +584,48 @@ async function getSupabaseClient(){
   });
   return supabaseClient;
 }
-function setStaffSession(session){
+async function verifyStaffSession(session){
+  if(!session||!session.access_token){
+    return null;
+  }
+  var res=await fetch('/api/staff-session',{
+    headers:{Authorization:'Bearer '+session.access_token}
+  });
+  var data=await res.json();
+  if(!res.ok||!data.authenticated){
+    throw new Error(data&&data.message?data.message:'This account is not authorized for staff access.');
+  }
+  return data.staff||null;
+}
+async function getStaffAccessToken(){
+  var client=await getSupabaseClient();
+  var result=await client.auth.getSession();
+  if(result.error)throw result.error;
+  if(!result.data.session){
+    setStaffSession(null,null);
+    throw new Error('Staff session expired. Please sign in again.');
+  }
+  staffSession=result.data.session;
+  return result.data.session.access_token;
+}
+function setStaffSession(session,profile){
   staffSession=session||null;
-  window.isStaffAuthenticated=Boolean(session&&session.user);
+  staffProfile=profile||null;
+  window.isStaffAuthenticated=Boolean(staffSession&&staffProfile);
   updateStaffUi();
+  if(window.isStaffAuthenticated){
+    refreshStaffData().catch(function(err){console.warn('Staff data refresh failed:',err.message||err);});
+    startStaffPolling();
+  }else{
+    if(staffRefreshTimer){
+      clearInterval(staffRefreshTimer);
+      staffRefreshTimer=null;
+    }
+    requests=[];
+    dashboardSnapshot=null;
+    renderRequests();
+    loadAnnouncements(false).catch(function(err){console.warn('Public announcement reload failed:',err.message||err);});
+  }
 }
 function updateStaffUi(){
   var btn=document.getElementById('adminToggle');
@@ -498,6 +634,7 @@ function updateStaffUi(){
   btn.classList.toggle('active',isStaff);
   document.getElementById('adminPostForm').style.display=isStaff?'block':'none';
   document.getElementById('adminRequestPanel').style.display=isStaff?'block':'none';
+  document.getElementById('staffRequestFilters').style.display=isStaff?'grid':'none';
   document.getElementById('staffViewToggle').style.display=isStaff?'block':'none';
   if(!isStaff){
     currentStaffView='resident';
@@ -512,6 +649,16 @@ function applyStaffViewMode(){
   var showDashboard=window.isStaffAuthenticated&&currentStaffView==='dashboard';
   document.querySelector('.main').style.display=showDashboard?'none':'block';
   document.getElementById('admin-dashboard').style.display=showDashboard?'block':'none';
+  if(showDashboard){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  }else{
+    var activePanel=document.querySelector('.panel.active');
+    var panelIds=['chat','announcements','requests'];
+    var index=activePanel?panelIds.indexOf(activePanel.id):-1;
+    if(index>=0&&!document.querySelector('.tab.active')){
+      document.querySelectorAll('.tab')[index].classList.add('active');
+    }
+  }
   updateStaffViewButtons();
 }
 function showResidentView(){
@@ -525,16 +672,33 @@ function showStaffDashboard(){
   }
   currentStaffView='dashboard';
   applyStaffViewMode();
-  fetchAdminMetrics();
+  refreshStaffData().catch(function(err){console.warn('Dashboard refresh failed:',err.message||err);});
+}
+function setStaffLoginMode(mode){
+  staffLoginMode=mode;
+  document.getElementById('staffPasswordPanel').style.display=mode==='password'?'block':'none';
+  document.getElementById('staffMfaPanel').style.display=mode==='mfa'?'block':'none';
+  document.getElementById('staffPasswordRecoveryPanel').style.display=mode==='recovery'?'block':'none';
+  document.getElementById('passwordResetBtn').style.display=mode==='password'?'inline-block':'none';
+  document.getElementById('loginSubmit').textContent=mode==='mfa'?'Verify':mode==='recovery'?'Update Password':'Login';
+}
+function resetStaffLoginForm(){
+  pendingMfaChallenge=null;
+  document.getElementById('loginError').textContent='';
+  document.getElementById('staffPassword').value='';
+  document.getElementById('staffMfaCode').value='';
+  document.getElementById('staffNewPassword').value='';
+  document.getElementById('staffConfirmPassword').value='';
+  setStaffLoginMode('password');
 }
 function showLoginModal(){
-  document.getElementById('loginError').textContent='';
+  resetStaffLoginForm();
   document.getElementById('login-modal').style.display='flex';
   setTimeout(function(){document.getElementById('staffEmail').focus();},50);
 }
 function hideLoginModal(){
   document.getElementById('login-modal').style.display='none';
-  document.getElementById('staffPassword').value='';
+  resetStaffLoginForm();
 }
 async function toggleAdmin(){
   if(window.isStaffAuthenticated){
@@ -544,7 +708,7 @@ async function toggleAdmin(){
     }catch(err){
       console.error('Staff sign-out error:',err);
     }
-    setStaffSession(null);
+    setStaffSession(null,null);
     showToast('Signed out');
     return;
   }
@@ -562,23 +726,167 @@ async function handleStaffLogin(){
     var client=await getSupabaseClient();
     var result=await client.auth.signInWithPassword({email:email,password:password});
     if(result.error)throw result.error;
-    setStaffSession(result.data.session);
+    if(await beginStaffMfaIfNeeded(client)){
+      submit.disabled=false;
+      return;
+    }
+    var profile=await verifyStaffSession(result.data.session);
+    setStaffSession(result.data.session,profile);
     hideLoginModal();
     showToast('Signed in');
   }catch(err){
+    try{
+      var clientForSignOut=await getSupabaseClient();
+      await clientForSignOut.auth.signOut();
+    }catch(_signOutError){}
+    setStaffSession(null,null);
     errorBox.textContent=err&&err.message?err.message:'Unable to sign in.';
   }
   submit.disabled=false;
+}
+async function beginStaffMfaIfNeeded(client){
+  var aalResult=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(aalResult.error)throw aalResult.error;
+  var aal=aalResult.data||{};
+  if(aal.nextLevel!=='aal2'||aal.currentLevel==='aal2'){
+    return false;
+  }
+
+  var factorsResult=await client.auth.mfa.listFactors();
+  if(factorsResult.error)throw factorsResult.error;
+  var factors=factorsResult.data||{};
+  var verifiedTotp=(factors.totp||[]).find(function(factor){return factor.status==='verified';});
+  if(!verifiedTotp){
+    throw new Error('MFA is required. Enroll a verified authenticator factor for this staff user in Supabase.');
+  }
+
+  var challengeResult=await client.auth.mfa.challenge({factorId:verifiedTotp.id});
+  if(challengeResult.error)throw challengeResult.error;
+  pendingMfaChallenge={
+    factorId:verifiedTotp.id,
+    challengeId:challengeResult.data.id
+  };
+  setStaffLoginMode('mfa');
+  document.getElementById('loginError').textContent='Enter the code from the staff authenticator app.';
+  setTimeout(function(){document.getElementById('staffMfaCode').focus();},50);
+  return true;
+}
+async function handleStaffMfaVerify(){
+  var code=document.getElementById('staffMfaCode').value.trim();
+  var errorBox=document.getElementById('loginError');
+  var submit=document.getElementById('loginSubmit');
+  errorBox.textContent='';
+  if(!pendingMfaChallenge||!code){errorBox.textContent='Enter the authenticator code.';return;}
+  submit.disabled=true;
+  try{
+    var client=await getSupabaseClient();
+    var verifyResult=await client.auth.mfa.verify({
+      factorId:pendingMfaChallenge.factorId,
+      challengeId:pendingMfaChallenge.challengeId,
+      code:code
+    });
+    if(verifyResult.error)throw verifyResult.error;
+    var sessionResult=await client.auth.getSession();
+    if(sessionResult.error)throw sessionResult.error;
+    var profile=await verifyStaffSession(sessionResult.data.session);
+    setStaffSession(sessionResult.data.session,profile);
+    hideLoginModal();
+    showToast('Signed in');
+  }catch(err){
+    errorBox.textContent=err&&err.message?err.message:'Unable to verify MFA code.';
+  }
+  submit.disabled=false;
+}
+async function sendStaffPasswordReset(){
+  var email=document.getElementById('staffEmail').value.trim();
+  var errorBox=document.getElementById('loginError');
+  errorBox.textContent='';
+  if(!email){errorBox.textContent='Enter your staff email first.';return;}
+  try{
+    var client=await getSupabaseClient();
+    var result=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+    if(result.error)throw result.error;
+    errorBox.textContent='Password reset email sent.';
+  }catch(err){
+    errorBox.textContent=err&&err.message?err.message:'Unable to send reset email.';
+  }
+}
+function showPasswordRecoveryMode(){
+  document.getElementById('loginError').textContent='Enter a new staff password.';
+  document.getElementById('login-modal').style.display='flex';
+  setStaffLoginMode('recovery');
+  setTimeout(function(){document.getElementById('staffNewPassword').focus();},50);
+}
+async function handleStaffPasswordUpdate(){
+  var password=document.getElementById('staffNewPassword').value;
+  var confirmPassword=document.getElementById('staffConfirmPassword').value;
+  var errorBox=document.getElementById('loginError');
+  var submit=document.getElementById('loginSubmit');
+  errorBox.textContent='';
+  if(password.length<8){errorBox.textContent='Use at least 8 characters.';return;}
+  if(password!==confirmPassword){errorBox.textContent='Passwords do not match.';return;}
+  submit.disabled=true;
+  try{
+    var client=await getSupabaseClient();
+    var result=await client.auth.updateUser({password:password});
+    if(result.error)throw result.error;
+    var sessionResult=await client.auth.getSession();
+    if(sessionResult.error)throw sessionResult.error;
+    var profile=await verifyStaffSession(sessionResult.data.session);
+    setStaffSession(sessionResult.data.session,profile);
+    hideLoginModal();
+    showToast('Password updated');
+  }catch(err){
+    errorBox.textContent=err&&err.message?err.message:'Unable to update password.';
+  }
+  submit.disabled=false;
+}
+function handleLoginPrimaryAction(){
+  if(staffLoginMode==='mfa'){
+    handleStaffMfaVerify();
+    return;
+  }
+  if(staffLoginMode==='recovery'){
+    handleStaffPasswordUpdate();
+    return;
+  }
+  handleStaffLogin();
 }
 async function initStaffAuth(){
   try{
     var client=await getSupabaseClient();
     var result=await client.auth.getSession();
     if(result.error)throw result.error;
-    setStaffSession(result.data.session);
-    client.auth.onAuthStateChange(function(_event,session){setStaffSession(session);});
+    if(result.data.session){
+      try{
+        var profile=await verifyStaffSession(result.data.session);
+        setStaffSession(result.data.session,profile);
+      }catch(_staffError){
+        setStaffSession(null,null);
+      }
+    }else{
+      setStaffSession(null,null);
+    }
+    client.auth.onAuthStateChange(async function(event,session){
+      if(event==='PASSWORD_RECOVERY'){
+        setStaffSession(null,null);
+        showPasswordRecoveryMode();
+        return;
+      }
+      if(!session){
+        setStaffSession(null,null);
+        return;
+      }
+      try{
+        var profile=await verifyStaffSession(session);
+        setStaffSession(session,profile);
+      }catch(err){
+        console.warn('Staff role check failed:',err.message||err);
+        setStaffSession(null,null);
+      }
+    });
   }catch(err){
-    setStaffSession(null);
+    setStaffSession(null,null);
     console.warn('Staff auth unavailable:',err.message||err);
   }
 }
@@ -616,6 +924,39 @@ function renderAuditLogRows(rows){
     '</tr>';
   }).join('');
 }
+function renderDashboardList(id,rows,kind){
+  var target=document.getElementById(id);
+  if(!target)return;
+  if(!rows||!rows.length){
+    target.textContent=kind==='announcement'?'No active announcements.':'No recent requests.';
+    return;
+  }
+  target.innerHTML=rows.map(function(row){
+    if(kind==='announcement'){
+      return '<div class="dashboard-list-item"><div class="dashboard-list-title">'+escapeHtml(row.title||'Untitled announcement')+'</div><div class="dashboard-list-meta">'+escapeHtml(row.status||'active')+' - '+escapeHtml(formatAnnouncementDate(row.created_at))+'</div></div>';
+    }
+    return '<div class="dashboard-list-item"><div class="dashboard-list-title">'+escapeHtml(row.tracking_number||row.id||'Request')+' - '+escapeHtml(row.title||'Untitled request')+'</div><div class="dashboard-list-meta">'+escapeHtml(statusLabel(row.status))+' - '+escapeHtml(row.category||'Other')+' - '+escapeHtml(formatRequestDate(row.created_at))+'</div></div>';
+  }).join('');
+}
+async function refreshStaffData(){
+  if(!window.isStaffAuthenticated)return;
+  var token=await getStaffAccessToken();
+  await Promise.all([
+    loadStaffRequests(token),
+    loadAnnouncements(true,token)
+  ]);
+  if(currentStaffView==='dashboard'){
+    await fetchAdminMetrics(token);
+  }
+}
+function startStaffPolling(){
+  if(staffRefreshTimer)return;
+  staffRefreshTimer=setInterval(function(){
+    if(window.isStaffAuthenticated){
+      refreshStaffData().catch(function(err){console.warn('Staff polling failed:',err.message||err);});
+    }
+  },30000);
+}
 async function fetchAdminMetrics(){
   if(!window.isStaffAuthenticated){
     document.getElementById('auditStatus').textContent='Staff login required.';
@@ -623,78 +964,148 @@ async function fetchAdminMetrics(){
   }
   document.getElementById('auditStatus').textContent='Loading...';
   try{
-    var client=await getSupabaseClient();
-    var sessionResult=await client.auth.getSession();
-    if(sessionResult.error)throw sessionResult.error;
-    if(!sessionResult.data.session){
-      setStaffSession(null);
+    var token=arguments[0]||await getStaffAccessToken();
+    var res=await fetch('/api/dashboard',{
+      headers:{Authorization:'Bearer '+token}
+    });
+    var data=await res.json();
+    if(res.status===401||res.status===403){
+      setStaffSession(null,null);
       document.getElementById('auditStatus').textContent='Staff session expired.';
       return;
     }
-
-    var requestsResult=await client.from('requests').select('*',{count:'exact'});
-    if(requestsResult.error)throw requestsResult.error;
-    var requestRows=requestsResult.data||[];
-    var openCount=requestRows.filter(function(row){
-      return !['resolved','closed','complete','completed'].includes(String(row.status||'').toLowerCase());
-    }).length;
-
-    var conversationResult=await client
-      .from('audit_logs')
-      .select('*',{count:'exact',head:true})
-      .or('event_type.ilike.%conversation%,event_type.ilike.%chat%');
-    if(conversationResult.error)throw conversationResult.error;
-
-    var auditResult=await client
-      .from('audit_logs')
-      .select('timestamp,event_type,related_record_id,metadata')
-      .order('timestamp',{ascending:false})
-      .limit(10);
-    if(auditResult.error)throw auditResult.error;
-    var auditRows=auditResult.data||[];
-
-    setMetric('metricConversations',conversationResult.count||0);
-    setMetric('metricOpenRequests',openCount);
-    setMetric('metricTopTopics',getTopTopic(requestRows));
-    setMetric('metricRecentActivity',auditRows.length);
+    if(!res.ok||!data.success){
+      throw new Error(data&&data.message?data.message:'Unable to load dashboard.');
+    }
+    dashboardSnapshot=data;
+    var metrics=data.metrics||{};
+    var auditRows=data.latest_audit_logs||[];
+    setMetric('metricConversations',metrics.conversations||0);
+    setMetric('metricOpenRequests',metrics.open_requests||0);
+    setMetric('metricInProgressRequests',metrics.in_progress_requests||0);
+    setMetric('metricResolvedRequests',metrics.resolved_requests||0);
+    setMetric('metricTopTopics',metrics.top_category||'-');
+    setMetric('metricRecentActivity',metrics.recent_activity||0);
+    renderDashboardList('dashboardLatestRequests',data.latest_requests||[],'request');
+    renderDashboardList('dashboardLatestAnnouncements',data.latest_announcements||[],'announcement');
     renderAuditLogRows(auditRows);
-    document.getElementById('auditStatus').textContent='Showing latest 10 entries.';
+    document.getElementById('auditStatus').textContent='Last refreshed '+formatAuditTime(data.generated_at)+'.';
   }catch(err){
     console.error('Admin metrics error:',err);
     document.getElementById('auditStatus').textContent=err&&err.message?err.message:'Unable to load dashboard.';
     setMetric('metricConversations','-');
     setMetric('metricOpenRequests','-');
+    setMetric('metricInProgressRequests','-');
+    setMetric('metricResolvedRequests','-');
     setMetric('metricTopTopics','-');
     setMetric('metricRecentActivity','-');
+    renderDashboardList('dashboardLatestRequests',[],'request');
+    renderDashboardList('dashboardLatestAnnouncements',[],'announcement');
     renderAuditLogRows([]);
   }
 }
-function postAnnouncement(){
+function formatAnnouncementDate(value){
+  if(!value)return new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var parsed=new Date(value);
+  if(Number.isNaN(parsed.getTime()))return String(value);
+  return parsed.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+function normalizeAnnouncementRecord(record){
+  if(!record)return null;
+  return {
+    id:record.id||Date.now(),
+    type:['urgent','event','info'].includes(String(record.type))?String(record.type):'info',
+    title:escapeHtml(record.title||'Untitled announcement'),
+    body:escapeHtml(record.body||''),
+    date:escapeHtml(formatAnnouncementDate(record.created_at||record.date))
+  };
+}
+async function loadAnnouncements(staffMode,existingToken){
+  try{
+    var headers={};
+    var url='/api/announcements';
+    if(staffMode&&window.isStaffAuthenticated){
+      url+='?staff=1';
+      headers.Authorization='Bearer '+(existingToken||await getStaffAccessToken());
+    }
+    var res=await fetch(url,{headers:headers});
+    var data=await res.json();
+    if((res.status===401||res.status===403)&&staffMode){
+      setStaffSession(null,null);
+    }
+    if(!res.ok){
+      throw new Error(data&&data.error?data.error:'Failed to load announcements.');
+    }
+    announcements=(data.announcements||[]).map(normalizeAnnouncementRecord).filter(Boolean);
+    renderAnnouncements();
+    updateHeroStats();
+  }catch(err){
+    console.warn('Announcement load failed:',err.message||err);
+    renderAnnouncements();
+    updateHeroStats();
+  }
+}
+async function postAnnouncement(){
   var title=document.getElementById('annTitle').value.trim();
   var body=document.getElementById('annBody').value.trim();
   var type=document.getElementById('annType').value;
   if(!title||!body){alert('Please fill in title and message.');return;}
-  var now=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  announcements.unshift({id:Date.now(),type:type,title:title,body:body,date:now});
-  document.getElementById('annTitle').value='';
-  document.getElementById('annBody').value='';
-  renderAnnouncements();updateHeroStats();
-  showToast('✓ Announcement posted!');
+  try{
+    var token=await getStaffAccessToken();
+    var res=await fetch('/api/announcements',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:'Bearer '+token
+      },
+      body:JSON.stringify({type:type,title:title,body:body})
+    });
+    var data=await res.json();
+    if(!res.ok){
+      if(res.status===401||res.status===403)setStaffSession(null,null);
+      throw new Error(data&&data.error?data.error:'Failed to post announcement.');
+    }
+    document.getElementById('annTitle').value='';
+    document.getElementById('annBody').value='';
+    await loadAnnouncements(true,token);
+    if(currentStaffView==='dashboard')await fetchAdminMetrics(token);
+    showToast('Announcement posted.');
+  }catch(err){
+    alert(err&&err.message?err.message:'Failed to post announcement.');
+  }
 }
-function addRequest(){
+async function addRequest(){
   var title=document.getElementById('reqTitle').value.trim();
   var desc=document.getElementById('reqDesc').value.trim();
   var cat=document.getElementById('reqCat').value;
   var status=document.getElementById('reqStatus').value;
   var addr=document.getElementById('reqAddr').value.trim();
   if(!title){alert('Please add a title.');return;}
-  var id='MGN-'+String(Math.floor(Math.random()*9000)+1000);
-  var now=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  requests.unshift({id:id,title:title,desc:desc+(addr?' - '+addr:''),cat:cat,status:status,date:now});
-  document.getElementById('reqTitle').value='';
-  document.getElementById('reqDesc').value='';
-  document.getElementById('reqAddr').value='';
-  renderRequests();showToast('✓ Request '+id+' logged!');
+  try{
+    var token=await getStaffAccessToken();
+    var res=await fetch('/api/requests',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:'Bearer '+token
+      },
+      body:JSON.stringify({title:title,description:desc,category:cat,status:status,address:addr})
+    });
+    var data=await res.json();
+    if(!res.ok){
+      if(res.status===401||res.status===403)setStaffSession(null,null);
+      throw new Error(data&&data.error?data.error:'Failed to log request.');
+    }
+    var id=autoAddRequest(data.request);
+    await loadStaffRequests(token);
+    if(currentStaffView==='dashboard')await fetchAdminMetrics(token);
+    document.getElementById('reqTitle').value='';
+    document.getElementById('reqDesc').value='';
+    document.getElementById('reqAddr').value='';
+    showToast('Request '+id+' logged.');
+  }catch(err){
+    alert(err&&err.message?err.message:'Failed to log request.');
+  }
 }
 function formatRequestDate(value){
   if(!value)return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -710,12 +1121,12 @@ function normalizeCreatedRequestRecord(record){
   var desc=description;
   if(address)desc=desc?desc+' - '+address:address;
   return {
-    id:trackingNumber||'MGN-'+String(Math.floor(Math.random()*9000)+1000),
-    title:record.title||'Untitled request',
-    desc:desc,
-    cat:record.category||record.cat||'Other',
-    status:record.status||'open',
-    date:formatRequestDate(record.created_at||record.date)
+    id:escapeHtml(trackingNumber||'Untracked'),
+    title:escapeHtml(record.title||'Untitled request'),
+    desc:escapeHtml(desc),
+    cat:escapeHtml(record.category||record.cat||'Other'),
+    status:normalizeUiStatus(record.status),
+    date:escapeHtml(formatRequestDate(record.created_at||record.date))
   };
 }
 function autoAddRequest(data){
@@ -724,6 +1135,55 @@ function autoAddRequest(data){
   requests=[normalized].concat(requests.filter(function(existing){return existing.id!==normalized.id;}));
   renderRequests();
   return normalized.id;
+}
+async function loadStaffRequests(existingToken){
+  if(!window.isStaffAuthenticated){
+    return;
+  }
+  var token=existingToken||await getStaffAccessToken();
+  var params=new URLSearchParams();
+  var searchEl=document.getElementById('requestSearch');
+  var statusEl=document.getElementById('requestStatusFilter');
+  if(searchEl&&searchEl.value.trim())params.set('search',searchEl.value.trim());
+  if(statusEl&&statusEl.value)params.set('status',statusEl.value);
+  var url='/api/requests'+(params.toString()?'?'+params.toString():'');
+  var res=await fetch(url,{
+    headers:{Authorization:'Bearer '+token}
+  });
+  var data=await res.json();
+  if(res.status===401||res.status===403){
+    setStaffSession(null,null);
+    throw new Error(data&&data.message?data.message:'Staff session expired.');
+  }
+  if(!res.ok){
+    throw new Error(data&&data.error?data.error:'Failed to load requests.');
+  }
+  requests=(data.requests||[]).map(normalizeCreatedRequestRecord).filter(Boolean);
+  renderRequests();
+}
+async function updateRequestStatus(trackingNumber,status){
+  if(!window.isStaffAuthenticated)return showLoginModal();
+  try{
+    var token=await getStaffAccessToken();
+    var res=await fetch('/api/requests?tracking_number='+encodeURIComponent(trackingNumber),{
+      method:'PATCH',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:'Bearer '+token
+      },
+      body:JSON.stringify({status:status})
+    });
+    var data=await res.json();
+    if(!res.ok){
+      if(res.status===401||res.status===403)setStaffSession(null,null);
+      throw new Error(data&&data.message?data.message:'Failed to update request.');
+    }
+    await loadStaffRequests(token);
+    if(currentStaffView==='dashboard')await fetchAdminMetrics(token);
+    showToast('Request '+trackingNumber+' updated.');
+  }catch(err){
+    alert(err&&err.message?err.message:'Failed to update request.');
+  }
 }
 function escapeHtml(text){
   return String(text)
@@ -810,7 +1270,7 @@ function showToast(msg){
   var t=document.createElement('div');t.className='toast';t.textContent=msg;
   document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
 }
-renderAnnouncements();renderRequests();updateHeroStats();initStaffAuth();
+renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
 </script>
 </body>
 </html>

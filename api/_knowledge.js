@@ -46,6 +46,7 @@ function isActiveRecord(record) {
     record &&
     record.active !== false &&
     record.is_active !== false &&
+    (record.review_status === undefined || record.review_status === null || record.review_status === "approved") &&
     record.status !== "inactive" &&
     record.status !== "archived"
   );
@@ -60,6 +61,8 @@ function getRecordText(record) {
     record.topic,
     record.category,
     record.title,
+    record.question,
+    record.answer,
     record.value,
     record.content,
   ]
@@ -88,7 +91,7 @@ function matchesTopic(record, topic) {
 
 function recordToFact(record) {
   const label = record.fact_key || record.fact_type || record.topic || record.category || record.title || "Fact";
-  const value = record.fact_value || record.value || record.content || record.description || "";
+  const value = record.answer || record.fact_value || record.value || record.content || record.description || "";
 
   if (!value) {
     return null;
@@ -128,5 +131,6 @@ export function buildDynamicKnowledgePrompt(basePrompt, facts) {
 DYNAMIC BOROUGH KNOWLEDGE:
 You are the Magnolia Borough Assistant. Use these facts as your primary source:
 ${facts.map((fact) => `- ${fact}`).join("\n")}
-Do not hallucinate. If the dynamic facts conflict with older static facts, use the dynamic facts.`;
+Do not hallucinate. If the dynamic facts conflict with older static facts, use the dynamic facts.
+If you do not have an approved Magnolia answer, say: "I don't have an approved Magnolia answer for that yet. Please contact Borough Hall or the correct department for confirmation."`;
 }

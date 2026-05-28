@@ -1,47 +1,33 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+import { requireStaff } from "./_staff-auth.js";
+import {
+  clampText,
+  getMethodNotAllowed,
+  getQueryParam,
+  normalizeAnnouncementStatus,
+  normalizeAnnouncementType,
+  normalizeBody,
+  sendJson,
+} from "./_http.js";
 
-function sendJson(res, statusCode, payload) {
-  res.status(statusCode).json(payload);
-}
+const ANNOUNCEMENTS_TABLE = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
 
-function validateAuth(req) {
-  const expectedSecret = process.env.ADMIN_SECRET;
-  const providedSecret = req.headers?.["x-admin-secret"];
-  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
-
-  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
-}
-
-function normalizeBody(body) {
-  if (!body) {
+function normalizeAnnouncementRecord(record) {
+  if (!record) {
     return null;
   }
 
-  if (typeof body === "string") {
-    try {
-      return JSON.parse(body);
-    } catch {
-      return null;
-    }
-  }
-
-  if (typeof body === "object" && !Array.isArray(body)) {
-    return body;
-  }
-
-  return null;
-}
-
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const table = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return { url, key, table };
+  return {
+    id: record.id || null,
+    type: normalizeAnnouncementType(record.type),
+    title: record.title || "",
+    body: record.body || "",
+    status: normalizeAnnouncementStatus(record.status),
+    starts_at: record.starts_at || null,
+    ends_at: record.ends_at || null,
+    created_at: record.created_at || null,
+    updated_at: record.updated_at || null,
+  };
 }
 
 function safeAnnouncementShape(body) {
@@ -54,164 +40,295 @@ function safeAnnouncementShape(body) {
     hasTitle: Boolean(String(body.title || "").trim()),
     hasBody: Boolean(String(body.body || "").trim()),
     type: String(body.type || "").trim() || null,
+    status: String(body.status || "").trim() || null,
   };
-}
-
-async function readResponse(response) {
-  const rawText = await response.text();
-
-  if (!rawText) {
-    return { parsed: null, rawText: "" };
-  }
-
-  try {
-    return { parsed: JSON.parse(rawText), rawText };
-  } catch {
-    return { parsed: null, rawText };
-  }
-}
-
-async function supabaseRequest(config, path, options = {}) {
-  const response = await fetch(`${config.url}/rest/v1/${config.table}${path}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
-      "Content-Type": "application/json",
-      Prefer: options.prefer || "return=representation",
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const { parsed, rawText } = await readResponse(response);
-
-  if (!response.ok) {
-    throw {
-      status: response.status,
-      details: parsed || rawText || "Supabase request failed.",
-    };
-  }
-
-  return parsed;
 }
 
 function buildAnnouncementRecord(body) {
-  const normalizedType = ["urgent", "event", "info"].includes(String(body.type || "").trim())
-    ? String(body.type || "").trim()
-    : "info";
-
-  const record = {
-    type: normalizedType,
-    title: String(body.title || "").trim(),
-    body: String(body.body || "").trim(),
+  return {
+    type: normalizeAnnouncementType(body.type),
+    title: clampText(body.title, 120),
+    body: clampText(body.body || body.message, 2000),
+    status: normalizeAnnouncementStatus(body.status),
+    starts_at: body.starts_at || null,
+    ends_at: body.ends_at || null,
     created_at: new Date().toISOString(),
   };
-
-  console.log("[api/announcements] Insert payload", {
-    type: record.type,
-    titleLength: record.title.length,
-    bodyLength: record.body.length,
-  });
-
-  return record;
 }
 
-export default async function handler(req, res) {
-  const config = getSupabaseConfig();
+function buildPatchRecord(body) {
+  const patch = {
+    updated_at: new Date().toISOString(),
+  };
 
-  if (!config) {
-    return sendJson(res, 500, {
-      error: "Server configuration error: Supabase environment variables are missing.",
+  if (Object.prototype.hasOwnProperty.call(body, "type")) {
+    patch.type = normalizeAnnouncementType(body.type);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "title")) {
+    patch.title = clampText(body.title, 120);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "body") || Object.prototype.hasOwnProperty.call(body, "message")) {
+    patch.body = clampText(body.body || body.message, 2000);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    patch.status = normalizeAnnouncementStatus(body.status);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "starts_at")) {
+    patch.starts_at = body.starts_at || null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "ends_at")) {
+    patch.ends_at = body.ends_at || null;
+  }
+
+  return patch;
+}
+
+async function writeAudit(eventType, actorId, recordId, metadata = {}) {
+  try {
+    await logAuditEvent(getServiceSupabaseClient(), {
+      eventType,
+      actorId,
+      recordId,
+      metadata,
+    });
+  } catch (auditError) {
+    console.error("[api/announcements] Failed to write audit log", {
+      eventType,
+      recordId,
+      error: auditError instanceof Error ? auditError.message : "Unknown audit error.",
+    });
+  }
+}
+
+async function handleGet(req, res) {
+  const staffMode = getQueryParam(req, "staff") === "1";
+  let staff = null;
+
+  if (staffMode) {
+    staff = await requireStaff(req, res);
+    if (!staff) {
+      return;
+    }
+  }
+
+  const supabase = getServiceSupabaseClient();
+  let query = supabase
+    .from(ANNOUNCEMENTS_TABLE)
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (!staffMode) {
+    query = query.or("status.is.null,status.eq.active");
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return sendJson(res, 200, {
+    success: true,
+    announcements: (Array.isArray(data) ? data : []).map(normalizeAnnouncementRecord),
+  });
+}
+
+async function handlePost(req, res) {
+  const staff = await requireStaff(req, res);
+  if (!staff) {
+    return;
+  }
+
+  const body = normalizeBody(req.body);
+
+  if (!body) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "INVALID_JSON",
+      message: "Invalid JSON body.",
     });
   }
 
-  if (req.method === "GET") {
-    try {
-      const records = await supabaseRequest(config, "?select=*&order=created_at.desc", {
-        method: "GET",
-        prefer: "return=minimal",
-      });
+  const insertPayload = buildAnnouncementRecord(body);
 
-      return sendJson(res, 200, {
-        announcements: Array.isArray(records) ? records : [],
-      });
-    } catch (error) {
-      console.error("[api/announcements] Failed to fetch announcements", error);
-
-      return sendJson(res, error.status || 500, {
-        error: "Failed to fetch announcements.",
-        details: error.details || error.message || "Unknown error.",
-      });
-    }
+  if (!insertPayload.title) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "TITLE_REQUIRED",
+      message: "An announcement title is required.",
+    });
   }
 
-  if (req.method === "POST") {
-    if (!validateAuth(req)) {
-      return sendJson(res, 401, {
-        error: "Unauthorized.",
-      });
-    }
-
-    const body = normalizeBody(req.body);
-
-    console.log("[api/announcements] POST request", safeAnnouncementShape(body));
-
-    if (!body) {
-      return sendJson(res, 400, { error: "Invalid JSON body." });
-    }
-
-    if (!String(body.title || "").trim()) {
-      return sendJson(res, 400, { error: "An announcement title is required." });
-    }
-
-    if (!String(body.body || "").trim()) {
-      return sendJson(res, 400, { error: "An announcement body is required." });
-    }
-
-    try {
-      const createdRecords = await supabaseRequest(config, "", {
-        method: "POST",
-        body: buildAnnouncementRecord(body),
-        prefer: "return=representation",
-      });
-
-      const createdAnnouncement = Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
-
-      console.log("[api/announcements] Created announcement", {
-        id: createdAnnouncement?.id || null,
-        type: createdAnnouncement?.type || null,
-      });
-
-      try {
-        await logAuditEvent(getServiceSupabaseClient(), {
-          eventType: "announcement_created",
-          actorId: null,
-          recordId: createdAnnouncement?.id || createdAnnouncement?.created_at || null,
-          metadata: {
-            type: createdAnnouncement?.type || null,
-            title: createdAnnouncement?.title || null,
-          },
-        });
-      } catch (auditError) {
-        console.error("[api/announcements] Failed to write audit log", auditError);
-      }
-
-      return sendJson(res, 201, {
-        announcement: createdAnnouncement,
-      });
-    } catch (error) {
-      console.error("[api/announcements] Failed to create announcement", {
-        announcement: safeAnnouncementShape(body),
-        error,
-      });
-
-      return sendJson(res, error.status || 500, {
-        error: "Failed to create announcement.",
-        details: error.details || error.message || "Unknown error.",
-      });
-    }
+  if (!insertPayload.body) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "BODY_REQUIRED",
+      message: "An announcement body is required.",
+    });
   }
 
-  res.setHeader("Allow", "GET, POST");
-  return sendJson(res, 405, { error: "Method not allowed." });
+  console.log("[api/announcements] Creating announcement", {
+    type: insertPayload.type,
+    status: insertPayload.status,
+    titleLength: insertPayload.title.length,
+    bodyLength: insertPayload.body.length,
+  });
+
+  const { data, error } = await getServiceSupabaseClient()
+    .from(ANNOUNCEMENTS_TABLE)
+    .insert(insertPayload)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const announcement = normalizeAnnouncementRecord(data);
+  await writeAudit("announcement_created", staff.user.id, announcement.id, {
+    type: announcement.type,
+    status: announcement.status,
+  });
+
+  return sendJson(res, 201, {
+    success: true,
+    announcement,
+  });
+}
+
+async function handlePatch(req, res) {
+  const staff = await requireStaff(req, res);
+  if (!staff) {
+    return;
+  }
+
+  const body = normalizeBody(req.body);
+  const id = clampText(getQueryParam(req, "id") || body?.id, 80);
+
+  if (!body) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "INVALID_JSON",
+      message: "Invalid JSON body.",
+    });
+  }
+
+  if (!id) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "ANNOUNCEMENT_ID_REQUIRED",
+      message: "Provide announcement id.",
+    });
+  }
+
+  const patch = buildPatchRecord(body);
+  const changedFields = Object.keys(patch).filter((key) => key !== "updated_at");
+
+  if (!changedFields.length) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "NO_PATCH_FIELDS",
+      message: "No supported update fields were provided.",
+    });
+  }
+
+  const { data, error } = await getServiceSupabaseClient()
+    .from(ANNOUNCEMENTS_TABLE)
+    .update(patch)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const announcement = normalizeAnnouncementRecord(data);
+  await writeAudit("announcement_updated", staff.user.id, announcement.id, {
+    changedFields,
+    status: announcement.status,
+  });
+
+  return sendJson(res, 200, {
+    success: true,
+    announcement,
+  });
+}
+
+async function handleDelete(req, res) {
+  const staff = await requireStaff(req, res);
+  if (!staff) {
+    return;
+  }
+
+  const id = clampText(getQueryParam(req, "id"), 80);
+
+  if (!id) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "ANNOUNCEMENT_ID_REQUIRED",
+      message: "Provide announcement id.",
+    });
+  }
+
+  const { data, error } = await getServiceSupabaseClient()
+    .from(ANNOUNCEMENTS_TABLE)
+    .update({ status: "archived", updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const announcement = normalizeAnnouncementRecord(data);
+  await writeAudit("announcement_archived", staff.user.id, announcement.id, {
+    status: announcement.status,
+  });
+
+  return sendJson(res, 200, {
+    success: true,
+    announcement,
+  });
+}
+
+export default async function handler(req, res) {
+  try {
+    if (req.method === "GET") {
+      return await handleGet(req, res);
+    }
+
+    if (req.method === "POST") {
+      return await handlePost(req, res);
+    }
+
+    if (req.method === "PATCH") {
+      return await handlePatch(req, res);
+    }
+
+    if (req.method === "DELETE") {
+      return await handleDelete(req, res);
+    }
+
+    return getMethodNotAllowed(res, ["GET", "POST", "PATCH", "DELETE"]);
+  } catch (error) {
+    console.error("[api/announcements] Request failed", {
+      method: req.method,
+      body: safeAnnouncementShape(normalizeBody(req.body)),
+      message: error instanceof Error ? error.message : "Unknown error.",
+    });
+
+    return sendJson(res, error.status || 500, {
+      success: false,
+      error: "ANNOUNCEMENTS_API_FAILED",
+      message: "Announcement operation failed.",
+      details: error.details || error.message || "Unknown error.",
+    });
+  }
 }

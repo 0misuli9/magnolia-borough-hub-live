@@ -1,4 +1,13 @@
 import { buildDynamicKnowledgePrompt, fetchRelevantKnowledgeFacts } from "./_knowledge.js";
+import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+import {
+  checkRateLimit,
+  clampText,
+  normalizeCategory,
+  normalizeBody,
+  rejectRateLimited,
+  sendJson,
+} from "./_http.js";
 
 const BOROUGH_KNOWLEDGE = `You are the official AI assistant for the Borough of Magnolia, Camden County, New Jersey. You are warm, friendly, helpful, and concise. You represent the borough with civic pride and genuine care for every resident.
 
@@ -32,44 +41,12 @@ PARKS:
 - Magnolia Lake Park and Veterans Memorial Park - open dawn to dusk
 
 SERVICE REQUEST INTAKE:
-When a resident wants to report a problem, warmly collect: 1) type of issue 2) location/address 3) brief description. Once you have all three, confirm logged and give tracking number like MGN-[4 random digits].
+When a resident wants to report a non-emergency municipal problem, warmly collect: 1) type of issue 2) location/address 3) brief description. Once you have all three, confirm the portal will log it and tell the resident the system will return an official tracking number after saving. Do not invent tracking numbers.
 
 IMPORTANT: When you have all info, append EXACTLY at the very end on its own line:
 SUBMIT_REQUEST:{"title":"[short title]","desc":"[description]","cat":"[one of: Roads & Infrastructure, Utilities & Lighting, Parks & Public Spaces, Sanitation & Trash, Noise & Safety, Permits & Zoning, Other]","addr":"[address]"}
 
 Keep responses friendly and concise - 2 to 4 sentences unless more detail is needed.`;
-
-function sendJson(res, statusCode, payload) {
-  res.status(statusCode).json(payload);
-}
-
-function validateAuth(req) {
-  const expectedSecret = process.env.ADMIN_SECRET;
-  const providedSecret = req.headers?.["x-admin-secret"];
-  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
-
-  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
-}
-
-function normalizeBody(body) {
-  if (!body) {
-    return null;
-  }
-
-  if (typeof body === "string") {
-    try {
-      return JSON.parse(body);
-    } catch {
-      return null;
-    }
-  }
-
-  if (typeof body === "object" && !Array.isArray(body)) {
-    return body;
-  }
-
-  return null;
-}
 
 function messageContentToText(content) {
   if (typeof content === "string") {
@@ -284,20 +261,24 @@ async function createServiceRequest(requestData) {
     throw new Error("Supabase environment variables are missing.");
   }
 
-  console.log("[api/chat] Request data ready for persistence", requestData);
-
   const trackingNumber = await createUniqueTrackingNumber(config);
   const insertPayload = {
     tracking_number: trackingNumber,
-    title: String(requestData.title || "").trim(),
-    description: String(requestData.description || requestData.desc || "").trim(),
-    category: String(requestData.category || requestData.cat || "Other").trim() || "Other",
-    address: String(requestData.address || requestData.addr || "").trim(),
+    title: clampText(requestData.title, 120) || "Resident service request",
+    description: clampText(requestData.description || requestData.desc, 2000),
+    category: normalizeCategory(requestData.category || requestData.cat),
+    address: clampText(requestData.address || requestData.addr, 200),
     status: "open",
+    source: "chat",
     created_at: new Date().toISOString(),
   };
 
-  console.log("[api/chat] Supabase insert payload", insertPayload);
+  console.log("[api/chat] Creating chat service request", {
+    trackingNumber,
+    category: insertPayload.category,
+    hasAddress: Boolean(insertPayload.address),
+    descriptionLength: insertPayload.description.length,
+  });
 
   const createdRecords = await supabaseRequest(config, "", {
     method: "POST",
@@ -305,10 +286,24 @@ async function createServiceRequest(requestData) {
     prefer: "return=representation",
   });
 
-  const createdRequest = Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
-  console.log("[api/chat] Supabase created request", createdRequest);
+  return Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
+}
 
-  return createdRequest;
+async function writeAuditEvent(eventType, recordId, metadata = {}) {
+  try {
+    await logAuditEvent(getServiceSupabaseClient(), {
+      eventType,
+      actorId: null,
+      recordId,
+      metadata,
+    });
+  } catch (auditError) {
+    console.error("[api/chat] Failed to write audit log", {
+      eventType,
+      recordId,
+      error: auditError,
+    });
+  }
 }
 
 export default async function handler(req, res) {
@@ -320,6 +315,11 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendJson(res, 405, { error: "Method not allowed. Use POST." });
+  }
+
+  const rateLimit = checkRateLimit(req, "chat", 20);
+  if (!rateLimit.allowed) {
+    return rejectRateLimited(res, rateLimit);
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -499,25 +499,37 @@ export default async function handler(req, res) {
   let createdRequest = null;
 
   if (requestData) {
-    console.log("[api/chat] Extracted SUBMIT_REQUEST payload", requestData);
-  }
-
-  if (requestData) {
+    console.log("[api/chat] Extracted SUBMIT_REQUEST payload", {
+      hasTitle: Boolean(String(requestData.title || "").trim()),
+      category: String(requestData.category || requestData.cat || "").trim() || null,
+      hasAddress: Boolean(String(requestData.address || requestData.addr || "").trim()),
+    });
     try {
       createdRequest = await createServiceRequest(requestData);
       reply = reply.replace(/MGN-\d{4}/g, createdRequest.tracking_number);
+      await writeAuditEvent("request_created_from_chat", createdRequest.tracking_number, {
+        source: "chat",
+        category: createdRequest.category || null,
+        status: createdRequest.status || null,
+        hasAddress: Boolean(createdRequest.address),
+      });
     } catch (error) {
       console.error("[api/chat] Failed to persist request", {
-        requestData,
-        error,
+        hasTitle: Boolean(String(requestData.title || "").trim()),
+        category: String(requestData.category || requestData.cat || "").trim() || null,
+        error: error instanceof Error ? error.message : "Unknown persistence error.",
       });
       return sendJson(res, error.status || 500, {
         error: "Failed to save service request.",
         details: error.details || error.message || "Unknown Supabase error.",
-        requestData,
       });
     }
   }
+
+  await writeAuditEvent("chat_conversation", typeof responseJson.id === "string" ? responseJson.id : null, {
+    latestUserLength: latestUserText.length,
+    createdRequestTrackingNumber: createdRequest?.tracking_number || null,
+  });
 
   return sendJson(res, 200, {
     success: true,

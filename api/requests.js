@@ -1,61 +1,41 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+import { getAuthenticatedStaff, requireStaff } from "./_staff-auth.js";
+import {
+  checkRateLimit,
+  clampText,
+  getIntQuery,
+  getMethodNotAllowed,
+  getQueryParam,
+  normalizeBody,
+  normalizeCategory,
+  normalizeStatus,
+  normalizeTrackingNumber,
+  rejectRateLimited,
+  sendJson,
+} from "./_http.js";
 
-function sendJson(res, statusCode, payload) {
-  res.status(statusCode).json(payload);
-}
+const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 
-function validateAuth(req) {
-  const expectedSecret = process.env.ADMIN_SECRET;
-  const providedSecret = req.headers?.["x-admin-secret"];
-  const normalizedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
-
-  return Boolean(expectedSecret && normalizedSecret && normalizedSecret === expectedSecret);
-}
-
-function normalizeBody(body) {
-  if (!body) {
+function normalizeRequestRecord(record) {
+  if (!record) {
     return null;
   }
 
-  if (typeof body === "string") {
-    try {
-      return JSON.parse(body);
-    } catch {
-      return null;
-    }
-  }
-
-  if (typeof body === "object" && !Array.isArray(body)) {
-    return body;
-  }
-
-  return null;
-}
-
-function getTrackingNumberFromRequest(req) {
-  const queryValue =
-    typeof req.query?.tracking_number === "string" ? req.query.tracking_number : null;
-
-  if (queryValue) {
-    return queryValue.trim().toUpperCase();
-  }
-
-  const requestUrl = new URL(req.url, "http://localhost");
-  const urlValue = requestUrl.searchParams.get("tracking_number");
-
-  return urlValue ? urlValue.trim().toUpperCase() : "";
-}
-
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const table = process.env.SUPABASE_REQUESTS_TABLE || "requests";
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return { url, key, table };
+  return {
+    id: record.id || null,
+    tracking_number: record.tracking_number || null,
+    title: record.title || "",
+    description: record.description || "",
+    category: normalizeCategory(record.category),
+    address: record.address || "",
+    status: normalizeStatus(record.status),
+    priority: record.priority || "normal",
+    assigned_to: record.assigned_to || null,
+    internal_notes: record.internal_notes || "",
+    source: record.source || "public",
+    created_at: record.created_at || null,
+    updated_at: record.updated_at || null,
+  };
 }
 
 function safeRequestShape(body) {
@@ -66,71 +46,30 @@ function safeRequestShape(body) {
   return {
     bodyKeys: Object.keys(body),
     hasTitle: Boolean(String(body.title || "").trim()),
-    trackingNumber: String(body.tracking_number || "").trim().toUpperCase() || null,
     category: String(body.category || body.cat || "").trim() || null,
     status: String(body.status || "").trim() || null,
+    hasAddress: Boolean(String(body.address || body.addr || "").trim()),
   };
-}
-
-async function readResponse(response) {
-  const rawText = await response.text();
-
-  if (!rawText) {
-    return { parsed: null, rawText: "" };
-  }
-
-  try {
-    return { parsed: JSON.parse(rawText), rawText };
-  } catch {
-    return { parsed: null, rawText };
-  }
-}
-
-async function supabaseRequest(config, path, options = {}) {
-  const response = await fetch(`${config.url}/rest/v1/${config.table}${path}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
-      "Content-Type": "application/json",
-      Prefer: options.prefer || "return=representation",
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const { parsed, rawText } = await readResponse(response);
-
-  if (!response.ok) {
-    throw {
-      status: response.status,
-      details: parsed || rawText || "Supabase request failed.",
-    };
-  }
-
-  return parsed;
-}
-
-async function trackingNumberExists(config, trackingNumber) {
-  const encodedTrackingNumber = encodeURIComponent(trackingNumber);
-  const records = await supabaseRequest(
-    config,
-    `?select=tracking_number&tracking_number=eq.${encodedTrackingNumber}&limit=1`,
-    { method: "GET", prefer: "return=minimal" },
-  );
-
-  return Array.isArray(records) && records.length > 0;
 }
 
 function generateTrackingNumber() {
   return `MGN-${Math.floor(Math.random() * 9000) + 1000}`;
 }
 
-async function createUniqueTrackingNumber(config) {
+async function createUniqueTrackingNumber(supabase) {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const trackingNumber = generateTrackingNumber();
-    const exists = await trackingNumberExists(config, trackingNumber);
+    const { data, error } = await supabase
+      .from(REQUESTS_TABLE)
+      .select("tracking_number")
+      .eq("tracking_number", trackingNumber)
+      .limit(1);
 
-    if (!exists) {
+    if (error) {
+      throw error;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
       return trackingNumber;
     }
   }
@@ -138,129 +77,325 @@ async function createUniqueTrackingNumber(config) {
   throw new Error("Unable to generate a unique tracking number.");
 }
 
-function buildRequestRecord(body, trackingNumber) {
-  const record = {
+function buildRequestRecord(body, trackingNumber, source, canSetStatus = false) {
+  return {
     tracking_number: trackingNumber,
-    title: String(body.title || "").trim(),
-    description: String(body.description || body.desc || "").trim(),
-    category: String(body.category || body.cat || "Other").trim() || "Other",
-    address: String(body.address || body.addr || "").trim(),
-    status: "pending",
+    title: clampText(body.title, 120),
+    description: clampText(body.description || body.desc, 2000),
+    category: normalizeCategory(body.category || body.cat),
+    address: clampText(body.address || body.addr, 200),
+    status: canSetStatus ? normalizeStatus(body.status) : "open",
     created_at: new Date().toISOString(),
+    source,
   };
-
-  console.log("[api/requests] Insert payload", record);
-
-  return record;
 }
 
-export default async function handler(req, res) {
-  const config = getSupabaseConfig();
+function buildPatchRecord(body) {
+  const patch = {
+    updated_at: new Date().toISOString(),
+  };
 
-  if (!config) {
-    return sendJson(res, 500, {
-      error: "Server configuration error: Supabase environment variables are missing.",
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    patch.status = normalizeStatus(body.status);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "category")) {
+    patch.category = normalizeCategory(body.category);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "priority")) {
+    patch.priority = clampText(body.priority, 40) || "normal";
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "assigned_to")) {
+    patch.assigned_to = clampText(body.assigned_to, 120) || null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "internal_notes")) {
+    patch.internal_notes = clampText(body.internal_notes, 2000);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "title")) {
+    patch.title = clampText(body.title, 120);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "description")) {
+    patch.description = clampText(body.description, 2000);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "address")) {
+    patch.address = clampText(body.address, 200);
+  }
+
+  return patch;
+}
+
+async function writeAudit(eventType, actorId, recordId, metadata = {}) {
+  try {
+    await logAuditEvent(getServiceSupabaseClient(), {
+      eventType,
+      actorId,
+      recordId,
+      metadata,
+    });
+  } catch (auditError) {
+    console.error("[api/requests] Failed to write audit log", {
+      eventType,
+      recordId,
+      error: auditError instanceof Error ? auditError.message : "Unknown audit error.",
+    });
+  }
+}
+
+async function handleLookup(req, res, trackingNumber) {
+  const rateLimit = checkRateLimit(req, "requests:lookup", 30);
+  if (!rateLimit.allowed) {
+    return rejectRateLimited(res, rateLimit);
+  }
+
+  const supabase = getServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from(REQUESTS_TABLE)
+    .select("*")
+    .eq("tracking_number", trackingNumber)
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return sendJson(res, 404, {
+      success: false,
+      error: "REQUEST_NOT_FOUND",
+      message: "Request not found.",
     });
   }
 
-  if (req.method === "GET") {
-    const trackingNumber = getTrackingNumberFromRequest(req);
+  return sendJson(res, 200, {
+    success: true,
+    request: normalizeRequestRecord(data[0]),
+  });
+}
 
-    try {
-      if (trackingNumber) {
-        const encodedTrackingNumber = encodeURIComponent(trackingNumber);
-        const records = await supabaseRequest(
-          config,
-          `?select=*&tracking_number=eq.${encodedTrackingNumber}&limit=1`,
-          { method: "GET", prefer: "return=minimal" },
-        );
+async function handleStaffList(req, res) {
+  const staff = await requireStaff(req, res);
+  if (!staff) {
+    return;
+  }
 
-        if (!Array.isArray(records) || !records.length) {
-          return sendJson(res, 404, { error: "Request not found." });
+  const supabase = getServiceSupabaseClient();
+  const limit = getIntQuery(req, "limit", 100, 1, 250);
+  const offset = getIntQuery(req, "offset", 0, 0, 10000);
+  const status = normalizeStatus(getQueryParam(req, "status"), "");
+  const category = getQueryParam(req, "category");
+  const search = clampText(getQueryParam(req, "search"), 120);
+  const order = getQueryParam(req, "sort") === "oldest" ? "created_at" : "created_at";
+  const ascending = getQueryParam(req, "sort") === "oldest";
+
+  let query = supabase
+    .from(REQUESTS_TABLE)
+    .select("*", { count: "exact" })
+    .order(order, { ascending })
+    .range(offset, offset + limit - 1);
+
+  if (status) {
+    query = query.eq("status", status);
+  }
+
+  if (category) {
+    query = query.eq("category", normalizeCategory(category));
+  }
+
+  if (search) {
+    const escaped = search.replace(/[%_]/g, "\\$&");
+    query = query.or(
+      `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
+    );
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return sendJson(res, 200, {
+    success: true,
+    requests: (Array.isArray(data) ? data : []).map(normalizeRequestRecord),
+    count: count || 0,
+    limit,
+    offset,
+  });
+}
+
+async function handleCreate(req, res) {
+  const rateLimit = checkRateLimit(req, "requests:create", 12);
+  if (!rateLimit.allowed) {
+    return rejectRateLimited(res, rateLimit);
+  }
+
+  const body = normalizeBody(req.body);
+
+  if (!body) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "INVALID_JSON",
+      message: "Invalid JSON body.",
+    });
+  }
+
+  if (!clampText(body.title, 120)) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "TITLE_REQUIRED",
+      message: "A request title is required.",
+    });
+  }
+
+  if (!clampText(body.description || body.desc, 2000)) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "DESCRIPTION_REQUIRED",
+      message: "A request description is required.",
+    });
+  }
+
+  const supabase = getServiceSupabaseClient();
+  const staff = await getAuthenticatedStaff(req);
+  const trackingNumber = normalizeTrackingNumber(body.tracking_number) || await createUniqueTrackingNumber(supabase);
+  const source = staff.authenticated ? "staff" : "public";
+  const insertPayload = buildRequestRecord(body, trackingNumber, source, staff.authenticated);
+
+  console.log("[api/requests] Creating request", {
+    source: insertPayload.source,
+    category: insertPayload.category,
+    status: insertPayload.status,
+    hasAddress: Boolean(insertPayload.address),
+  });
+
+  const { data, error } = await supabase
+    .from(REQUESTS_TABLE)
+    .insert(insertPayload)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const createdRequest = normalizeRequestRecord(data);
+  await writeAudit("request_created", staff.authenticated ? staff.user.id : null, createdRequest.tracking_number, {
+    source: createdRequest.source,
+    category: createdRequest.category,
+    status: createdRequest.status,
+    hasAddress: Boolean(createdRequest.address),
+  });
+
+  return sendJson(res, 201, {
+    success: true,
+    request: createdRequest,
+  });
+}
+
+async function handlePatch(req, res) {
+  const staff = await requireStaff(req, res);
+  if (!staff) {
+    return;
+  }
+
+  const body = normalizeBody(req.body);
+  const recordId = clampText(getQueryParam(req, "id") || body?.id, 80);
+  const trackingNumber = normalizeTrackingNumber(getQueryParam(req, "tracking_number") || body?.tracking_number);
+
+  if (!body) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "INVALID_JSON",
+      message: "Invalid JSON body.",
+    });
+  }
+
+  if (!recordId && !trackingNumber) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "REQUEST_ID_REQUIRED",
+      message: "Provide id or tracking_number.",
+    });
+  }
+
+  const patch = buildPatchRecord(body);
+  const patchKeys = Object.keys(patch).filter((key) => key !== "updated_at");
+
+  if (!patchKeys.length) {
+    return sendJson(res, 400, {
+      success: false,
+      error: "NO_PATCH_FIELDS",
+      message: "No supported update fields were provided.",
+    });
+  }
+
+  const supabase = getServiceSupabaseClient();
+  let query = supabase.from(REQUESTS_TABLE).update(patch).select("*").single();
+  query = recordId ? query.eq("id", recordId) : query.eq("tracking_number", trackingNumber);
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  const updatedRequest = normalizeRequestRecord(data);
+  await writeAudit("request_updated", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
+    changedFields: patchKeys,
+    status: updatedRequest.status,
+  });
+
+  return sendJson(res, 200, {
+    success: true,
+    request: updatedRequest,
+  });
+}
+
+export default async function handler(req, res) {
+  try {
+    if (req.method === "GET") {
+      const rawTrackingNumber = getQueryParam(req, "tracking_number");
+      if (rawTrackingNumber) {
+        const trackingNumber = normalizeTrackingNumber(rawTrackingNumber);
+        if (!trackingNumber) {
+          return sendJson(res, 400, {
+            success: false,
+            error: "INVALID_TRACKING_NUMBER",
+            message: "Use a tracking number like MGN-1234.",
+          });
         }
-
-        return sendJson(res, 200, { request: records[0] });
+        return handleLookup(req, res, trackingNumber);
       }
-
-      if (!validateAuth(req)) {
-        return sendJson(res, 401, {
-          error: "Unauthorized.",
-        });
-      }
-
-      const records = await supabaseRequest(config, "?select=*&order=created_at.desc", {
-        method: "GET",
-        prefer: "return=minimal",
-      });
-
-      return sendJson(res, 200, { requests: Array.isArray(records) ? records : [] });
-    } catch (error) {
-      return sendJson(res, error.status || 500, {
-        error: "Failed to fetch requests.",
-        details: error.details || error.message || "Unknown error.",
-      });
+      return handleStaffList(req, res);
     }
+
+    if (req.method === "POST") {
+      return await handleCreate(req, res);
+    }
+
+    if (req.method === "PATCH") {
+      return await handlePatch(req, res);
+    }
+
+    return getMethodNotAllowed(res, ["GET", "POST", "PATCH"]);
+  } catch (error) {
+    console.error("[api/requests] Request failed", {
+      method: req.method,
+      body: safeRequestShape(normalizeBody(req.body)),
+      message: error instanceof Error ? error.message : "Unknown error.",
+    });
+
+    return sendJson(res, error.status || 500, {
+      success: false,
+      error: "REQUESTS_API_FAILED",
+      message: "Request operation failed.",
+      details: error.details || error.message || "Unknown error.",
+    });
   }
-
-  if (req.method === "POST") {
-    const body = normalizeBody(req.body);
-
-    console.log("[api/requests] POST request", safeRequestShape(body));
-
-    if (!body) {
-      return sendJson(res, 400, { error: "Invalid JSON body." });
-    }
-
-    if (!String(body.title || "").trim()) {
-      return sendJson(res, 400, { error: "A request title is required." });
-    }
-
-    try {
-      const trackingNumber = await createUniqueTrackingNumber(config);
-
-      console.log("[api/requests] Using tracking number", { trackingNumber });
-
-      const createdRecords = await supabaseRequest(config, "", {
-        method: "POST",
-        body: buildRequestRecord(body, trackingNumber),
-        prefer: "return=representation",
-      });
-
-      const createdRequest = Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
-
-      console.log("[api/requests] Created request record", createdRequest);
-
-      try {
-        await logAuditEvent(getServiceSupabaseClient(), {
-          eventType: "request_created",
-          actorId: null,
-          recordId: createdRequest?.tracking_number || trackingNumber,
-          metadata: {
-            category: createdRequest?.category || null,
-            status: createdRequest?.status || null,
-            hasAddress: Boolean(createdRequest?.address),
-          },
-        });
-      } catch (auditError) {
-        console.error("[api/requests] Failed to write audit log", auditError);
-      }
-
-      return sendJson(res, 201, {
-        request: createdRequest,
-      });
-    } catch (error) {
-      console.error("[api/requests] Failed to create request", {
-        request: safeRequestShape(body),
-        error,
-      });
-
-      return sendJson(res, error.status || 500, {
-        error: "Failed to create request.",
-        details: error.details || error.message || "Unknown error.",
-      });
-    }
-  }
-
-  res.setHeader("Allow", "GET, POST");
-  return sendJson(res, 405, { error: "Method not allowed." });
 }

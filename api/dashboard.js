@@ -4,6 +4,18 @@ import { getMethodNotAllowed, normalizeCategory, normalizeStatus, sendJson } fro
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 const ANNOUNCEMENTS_TABLE = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
+const STAFF_AUDIT_EVENTS = [
+  "request_created",
+  "request_created_from_chat",
+  "request_updated",
+  "announcement_created",
+  "announcement_updated",
+  "announcement_archived",
+  "knowledge_created",
+  "knowledge_updated",
+  "knowledge_archived",
+  "staff_sign_in",
+];
 
 function normalizeRequest(record) {
   return {
@@ -93,12 +105,13 @@ export default async function handler(req, res) {
       supabase
         .from("audit_logs")
         .select("timestamp,event_type,related_record_id,metadata")
+        .in("event_type", STAFF_AUDIT_EVENTS)
         .order("timestamp", { ascending: false })
         .limit(10),
       supabase
         .from("audit_logs")
         .select("*", { count: "exact", head: true })
-        .or("event_type.ilike.%conversation%,event_type.ilike.%chat%"),
+        .eq("event_type", "chat_conversation"),
     ]);
 
     if (requestsResult.error) throw requestsResult.error;

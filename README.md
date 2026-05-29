@@ -8,6 +8,7 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 
 - Browser renders `index.html`.
 - Resident UX is task-first: Ask a Borough Question, Report a Problem, Check a Request, and See Borough Updates route residents into the correct workflow without requiring prompt-writing skill.
+- Resident depth includes Departments & Contacts, Meetings & Calendar, and Forms & Public Records sections. Sections use config-backed content or explicit review-ready fallback text instead of blank pages.
 - Mobile layout uses responsive task cards, dynamic viewport sizing for chat, 16px mobile form inputs, wrapped long records, and mobile-friendly staff audit cards.
 - Browser signs staff in with Supabase Auth using `/api/auth-config`.
 - Browser sends staff Supabase access tokens to protected APIs with `Authorization: Bearer <token>`.
@@ -17,7 +18,8 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 - Announcements and requests persist in Supabase, not browser-local arrays.
 - Chat-created requests are persisted by `api/chat.js` with server-generated tracking numbers.
 - Resident status lookup returns a server-backed request summary and status timeline.
-- A small `BOROUGH_CONFIG` object in `index.html` centralizes the first Magnolia-specific contact/config values as groundwork for future municipality templates.
+- `BOROUGH_CONFIG` in `index.html` centralizes Magnolia-specific identity, contact placeholders, service categories, department directory content, calendar notes, and forms/public-records resources as groundwork for future municipality templates.
+- Staff audit activity is displayed as human-readable events. Chat volume is counted as a metric; individual chat-turn audit rows are not shown in the staff activity table.
 
 ## Environment Variables
 

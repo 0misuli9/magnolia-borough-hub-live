@@ -51,13 +51,30 @@ Expected: stats route correctly, chat is readable without line-by-line scrolling
 
 ### Test 0A - Task Cards And Prompts
 
-1. Click Ask a Borough Question.
-2. Click Report a Problem.
-3. Click Check a Request.
-4. Click See Borough Updates.
-5. Click each starter prompt.
+1. Click Start Here in the hero.
+2. Confirm it scrolls to the resident action cards.
+3. Click Ask a Borough Question.
+4. Click Report a Problem.
+5. Click Check a Request.
+6. Click See Borough Updates.
+7. Click Departments & Contacts.
+8. Click Meetings & Calendar.
+9. Click Forms & Public Records.
+10. Click each starter prompt.
 
-Expected: each card changes the actual workflow and starter prompts send to the assistant.
+Expected: the hero is not a duplicate navigation row; each card opens its own workflow or section; starter prompts send to the assistant.
+
+### Test 0B - Staff Audit Readability
+
+1. Sign in as staff.
+2. Open Staff Dashboard.
+3. Review Recent Audit Logs.
+4. Confirm event labels are plain English.
+5. Confirm request records show tracking numbers when available.
+6. Confirm no `resp_...` response IDs or raw JSON metadata appear.
+7. Confirm mobile audit cards show the same humanized content.
+
+Expected: chat turns are counted in metrics, not listed as repetitive audit rows; the activity table shows meaningful staff-facing events.
 
 ### Test 1 - Cross-Browser Public Request
 

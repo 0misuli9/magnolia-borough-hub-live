@@ -59,7 +59,6 @@
   .hero-stat,.hero-stat-static{appearance:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:white;text-align:left;padding:9px 12px;min-width:118px;}
   .hero-stat{cursor:pointer;transition:background 0.2s,transform 0.2s,border-color 0.2s;}
   .hero-stat:hover{background:rgba(255,255,255,0.16);border-color:rgba(240,192,48,0.65);transform:translateY(-1px);}
-  .hero-stat .hero-stat-label::after{content:'  View';color:var(--gold-bright);font-weight:800;text-transform:none;letter-spacing:0;}
   .hero-stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-bright);}
   .hero-stat-label{font-size:11px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:0.8px;margin-top:1px;}
   .task-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:-8px 0 24px;}
@@ -82,6 +81,21 @@
   .timeline-step{background:white;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:11px;font-weight:800;padding:8px;text-align:center;}
   .timeline-step.active,.timeline-step.complete{border-color:var(--green-mid);color:var(--green-dark);}
   .timeline-step.active{box-shadow:inset 0 0 0 2px var(--gold-bright);}
+  .resident-section{background:white;border:1.5px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:22px;margin-bottom:20px;}
+  .section-intro{color:var(--text-mid);font-size:13px;line-height:1.6;margin:-6px 0 18px;max-width:720px;}
+  .content-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+  .content-card{background:var(--off-white);border:1px solid var(--border);border-radius:10px;padding:15px;overflow-wrap:anywhere;word-break:break-word;}
+  .content-card h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--green-dark);margin-bottom:8px;}
+  .content-card p,.content-card li{font-size:12px;color:var(--text-mid);line-height:1.55;}
+  .content-card ul{padding-left:18px;}
+  .content-meta{display:grid;gap:5px;font-size:12px;color:var(--text-mid);}
+  .content-meta strong{color:var(--green-dark);}
+  .empty-note{background:var(--gold-pale);border:1px solid var(--gold-light);border-radius:8px;color:var(--text-mid);font-size:12px;line-height:1.55;padding:12px;margin-top:12px;}
+  .public-request-result{display:none;margin-top:14px;padding:14px;border-radius:10px;font-size:13px;line-height:1.6;}
+  .public-request-result.success{display:block;background:var(--green-pale);border:1px solid var(--green-light);color:var(--green-dark);}
+  .public-request-result.error{display:block;background:#fef2f2;border:1px solid #fecaca;color:var(--red);}
+  .audit-chip{display:inline-flex;align-items:center;background:var(--green-pale);border:1px solid var(--border);border-radius:999px;color:var(--green-dark);font-size:11px;font-weight:700;margin:2px 4px 2px 0;padding:3px 8px;white-space:normal;}
+  .audit-muted{color:var(--text-light);}
   .chat-container{display:flex;flex-direction:column;height:calc(100vh - 300px);height:calc(100dvh - 300px);min-height:520px;max-height:760px;background:white;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
   .chat-header{padding:14px 18px;background:linear-gradient(135deg,var(--green-dark),var(--green));border-bottom:3px solid var(--gold-bright);display:flex;align-items:center;gap:10px;}
   .ai-dot{width:9px;height:9px;background:var(--gold-bright);border-radius:50%;box-shadow:0 0 0 3px rgba(240,192,48,0.3);animation:pulse 2s infinite;flex-shrink:0;}
@@ -221,6 +235,8 @@
     .hero-stat,.hero-stat-static{flex:1 1 calc(50% - 8px);min-width:130px;padding:8px 10px;}
     .task-grid{grid-template-columns:1fr;gap:10px;margin-bottom:18px;}
     .task-card{min-height:106px;padding:14px;}
+    .resident-section{padding:16px;border-radius:12px;}
+    .content-grid{grid-template-columns:1fr;}
     .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}.metric-grid,.dashboard-lists,.request-filters{grid-template-columns:1fr;}
     .main{padding:14px 12px;}.tab{padding:11px 12px;font-size:12px;flex:0 0 auto;}
     .brand-text h1{font-size:13px;}.brand-text p{display:none;}
@@ -328,13 +344,12 @@
         <h2>Your Borough.<br/>At Your Fingertips.</h2>
         <p>Get instant answers about services, permits, and schedules — or report an issue directly to borough staff. Available 24 hours a day, 7 days a week.</p>
         <div class="hero-actions">
-          <button class="hero-btn-primary" type="button" data-action="ask-question">💬 Chat with AI Assistant</button>
-          <button class="hero-btn-secondary" type="button" data-action="check-request">🔍 Check Request Status</button>
+          <button class="hero-btn-primary" type="button" data-action="start-here">Start Here</button>
         </div>
         <div class="hero-stats">
           <div class="hero-stat-static"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
-          <button class="hero-stat" type="button" data-action="check-request" aria-label="View open service requests"><div class="hero-stat-num" id="heroOpen">0</div><div class="hero-stat-label">Open Requests</div></button>
-          <button class="hero-stat" type="button" data-action="see-updates" aria-label="View active borough notices"><div class="hero-stat-num" id="heroAnn">3</div><div class="hero-stat-label">Active Notices</div></button>
+          <div class="hero-stat-static"><div class="hero-stat-num" id="heroResolvedMonth">—</div><div class="hero-stat-label">Resolved This Month</div></div>
+          <div class="hero-stat-static"><div class="hero-stat-num" id="heroAnn">0</div><div class="hero-stat-label">Active Notices</div></div>
         </div>
       </div>
     </div>
@@ -347,7 +362,7 @@
       <button class="task-card" type="button" data-action="report-problem" aria-label="Report a non-emergency borough problem">
         <span class="task-title">Report a Problem</span>
         <span class="task-copy">Potholes, streetlights, trash, public works concerns.</span>
-        <span class="task-action">Start report</span>
+        <span class="task-action">Open request form</span>
       </button>
       <button class="task-card" type="button" data-action="check-request" aria-label="Check a service request status">
         <span class="task-title">Check a Request</span>
@@ -358,6 +373,21 @@
         <span class="task-title">See Borough Updates</span>
         <span class="task-copy">Alerts, announcements, meetings, and service notices.</span>
         <span class="task-action">View notices</span>
+      </button>
+      <button class="task-card" type="button" data-action="departments" aria-label="Open departments and contacts">
+        <span class="task-title">Departments & Contacts</span>
+        <span class="task-copy">Find the right borough office or contact path.</span>
+        <span class="task-action">Open directory</span>
+      </button>
+      <button class="task-card" type="button" data-action="calendar" aria-label="Open meetings and calendar">
+        <span class="task-title">Meetings & Calendar</span>
+        <span class="task-copy">Council meetings, collection notes, and public events.</span>
+        <span class="task-action">View schedule</span>
+      </button>
+      <button class="task-card" type="button" data-action="forms" aria-label="Open forms and public records">
+        <span class="task-title">Forms & Public Records</span>
+        <span class="task-copy">Common forms and the public-records request path.</span>
+        <span class="task-action">View resources</span>
       </button>
     </div>
     <div class="chat-container" id="chatContainer">
@@ -391,6 +421,55 @@
       </div>
       <div class="privacy-note">Do not submit emergencies or highly sensitive personal information. For emergencies call 911; for urgent police, fire, or medical matters use official emergency channels.</div>
     </div>
+  </div>
+  <div class="panel" id="report">
+    <section class="resident-section">
+      <h2 class="section-title">Report a Problem</h2>
+      <p class="section-intro">Use this form for non-emergency borough service requests. For emergencies, call 911.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="publicReqCategory">Issue Type</label>
+          <select class="form-select" id="publicReqCategory"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="publicReqLocation">Address / Location</label>
+          <input class="form-input" id="publicReqLocation" maxlength="200" placeholder="Street address, intersection, or landmark"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="publicReqTitle">Short Title</label>
+        <input class="form-input" id="publicReqTitle" maxlength="120" placeholder="e.g. Pothole near 123 Main Street"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="publicReqDescription">Description</label>
+        <textarea class="form-textarea" id="publicReqDescription" maxlength="2000" placeholder="Include details that help borough staff understand the issue. Do not submit emergencies here."></textarea>
+      </div>
+      <button class="submit-btn" id="publicRequestSubmitBtn" type="button">Submit Request</button>
+      <div class="empty-note">Do not submit highly sensitive personal information. Information submitted through this portal may be reviewed by borough staff and may be retained according to applicable public records and records-retention requirements.</div>
+      <div class="public-request-result" id="publicRequestResult" aria-live="polite"></div>
+    </section>
+  </div>
+  <div class="panel" id="contacts">
+    <section class="resident-section">
+      <h2 class="section-title">Departments & Contacts</h2>
+      <p class="section-intro">Start here when you know the topic but not the right office. Contact details marked for confirmation should be reviewed by borough staff before broad public use.</p>
+      <div class="content-grid" id="departmentDirectory"></div>
+    </section>
+  </div>
+  <div class="panel" id="calendar">
+    <section class="resident-section">
+      <h2 class="section-title">Meetings & Calendar</h2>
+      <p class="section-intro">A simple public schedule view for common resident planning needs.</p>
+      <div class="content-grid" id="calendarList"></div>
+      <div class="empty-note" id="calendarEventNote">Public events from announcements will appear here when event notices are active.</div>
+    </section>
+  </div>
+  <div class="panel" id="forms">
+    <section class="resident-section">
+      <h2 class="section-title">Forms & Public Records</h2>
+      <p class="section-intro">Common resident resources and the public-records request path. Final links should be confirmed by the borough.</p>
+      <div class="content-grid" id="formsList"></div>
+    </section>
   </div>
   <div class="panel" id="announcements">
     <h2 class="section-title">Borough Announcements</h2>
@@ -571,6 +650,7 @@ const BOROUGH_CONFIG={
   established:'1915',
   phone:'(856) 783-1520',
   hallAddress:'Borough Hall address to be confirmed by borough staff',
+  hours:'Office hours to be confirmed by borough staff',
   serviceCategories:[
     'Roads & Infrastructure',
     'Utilities & Lighting',
@@ -579,6 +659,24 @@ const BOROUGH_CONFIG={
     'Noise & Safety',
     'Permits & Zoning',
     'Other'
+  ],
+  departments:[
+    {name:'Borough Hall',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'General borough questions and routing.'},
+    {name:'Borough Clerk',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'Records, meetings, licenses, and general municipal administration.'},
+    {name:'Public Works',phone:'(856) 784-6162',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'Roads, potholes, street issues, trash, recycling, and public works concerns.'},
+    {name:'Tax Collector',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'Tax questions and payment routing.'},
+    {name:'Construction / Permits',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'Permits, inspections, and construction-office routing.'},
+    {name:'Police Non-Emergency',phone:'Contact Borough Hall for current non-emergency routing',email:'Not applicable',hours:'For emergencies call 911',notes:'Use 911 for emergencies. Confirm non-emergency routing with the borough.'}
+  ],
+  calendarItems:[
+    {title:'Council Meetings',detail:'Meeting schedule and agenda links should be confirmed by borough staff.',status:'Needs borough confirmation'},
+    {title:'Trash & Recycling',detail:'Collection days should be confirmed from the borough schedule before broad public use.',status:'Needs borough confirmation'},
+    {title:'Public Notices & Events',detail:'Active event announcements posted by staff appear in the Announcements section.',status:'Live through announcements'}
+  ],
+  forms:[
+    {title:'Public Records Request (OPRA)',detail:'Public-records request path and final wording should be confirmed by the borough.',status:'Contact Borough Hall'},
+    {title:'Permit Forms',detail:'Construction and zoning form links can be added after borough staff confirms the official source.',status:'Link pending'},
+    {title:'Resident Service Request',detail:'Use the Report a Problem card to submit non-emergency service requests through this portal.',status:'Available in portal'}
   ]
 };
 window.isStaffAuthenticated=false;
@@ -598,7 +696,14 @@ let lastResponseId=null;
 let isLoading=false;
 
 function updateHeroStats(){
-  document.getElementById('heroOpen').textContent=requests.filter(r=>!['resolved','closed','complete','completed'].includes(String(r.status||'').toLowerCase())).length;
+  var resolvedThisMonth=requests.filter(function(r){
+    if(normalizeUiStatus(r.status)!=='resolved')return false;
+    var date=new Date(r.updated_at||r.created_at||r.date||0);
+    var now=new Date();
+    return Number.isFinite(date.getTime())&&date.getMonth()===now.getMonth()&&date.getFullYear()===now.getFullYear();
+  }).length;
+  var resolvedTarget=document.getElementById('heroResolvedMonth');
+  if(resolvedTarget)resolvedTarget.textContent=requests.length?resolvedThisMonth:'—';
   document.getElementById('heroAnn').textContent=announcements.length;
 }
 function normalizeUiStatus(status){
@@ -719,6 +824,19 @@ function switchTabByName(name){
     switchTab(name,tab);
   }
 }
+function switchResidentPanel(name){
+  if(window.isStaffAuthenticated&&currentStaffView==='dashboard'){
+    currentStaffView='resident';
+    applyStaffViewMode();
+  }
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  var panel=document.getElementById(name);
+  if(panel){
+    panel.classList.add('active');
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
 function focusAssistant(){
   switchTabByName('chat');
   scrollToChat();
@@ -738,12 +856,18 @@ function focusAnnouncements(){
   },50);
 }
 function startProblemReport(){
-  switchTabByName('chat');
+  switchResidentPanel('report');
   setTimeout(function(){
-    quickSend('I want to report a non-emergency borough problem.');
-  },150);
+    var input=document.getElementById('publicReqCategory');
+    if(input)input.focus();
+  },100);
 }
 function handleResidentAction(action){
+  if(action==='start-here'){
+    var cards=document.querySelector('.task-grid');
+    if(cards)cards.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
   if(action==='ask-question'){
     focusAssistant();
     return;
@@ -758,6 +882,18 @@ function handleResidentAction(action){
   }
   if(action==='see-updates'){
     focusAnnouncements();
+    return;
+  }
+  if(action==='departments'){
+    switchResidentPanel('contacts');
+    return;
+  }
+  if(action==='calendar'){
+    switchResidentPanel('calendar');
+    return;
+  }
+  if(action==='forms'){
+    switchResidentPanel('forms');
   }
 }
 function scrollToChat(){document.getElementById('chatContainer').scrollIntoView({behavior:'smooth'});setTimeout(function(){document.getElementById('chatInput').focus();},400);}
@@ -1106,19 +1242,71 @@ function getTopTopic(requestRows){
   var top=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
   return top?top:'-';
 }
+const AUDIT_EVENT_LABELS={
+  request_created:'Request created',
+  request_created_from_chat:'Request created (chat)',
+  request_updated:'Request updated',
+  announcement_created:'Announcement posted',
+  announcement_updated:'Announcement updated',
+  announcement_archived:'Announcement archived',
+  knowledge_created:'Knowledge added',
+  knowledge_updated:'Knowledge updated',
+  knowledge_archived:'Knowledge archived',
+  staff_sign_in:'Staff sign-in'
+};
+function humanizeAuditEvent(eventType){
+  return AUDIT_EVENT_LABELS[eventType]||String(eventType||'Activity').replace(/_/g,' ').replace(/\b\w/g,function(char){return char.toUpperCase();});
+}
+function formatAuditRecord(row){
+  var eventType=String(row.event_type||'');
+  var record=String(row.related_record_id||'').trim();
+  if(/^MGN-\d{4}$/i.test(record))return record.toUpperCase();
+  if(eventType.indexOf('announcement_')===0)return 'Announcement';
+  if(eventType.indexOf('knowledge_')===0)return 'Knowledge base';
+  if(eventType==='staff_sign_in')return 'Staff account';
+  if(eventType.indexOf('chat')>=0)return 'Conversation';
+  return '—';
+}
+function formatAuditValue(value){
+  if(Array.isArray(value))return value.join(', ');
+  if(typeof value==='boolean')return value?'Yes':'No';
+  if(value===null||typeof value==='undefined'||value==='')return '';
+  return String(value);
+}
+function auditMetadataItems(row){
+  var metadata=row&&row.metadata&&typeof row.metadata==='object'?row.metadata:{};
+  var items=[];
+  var allowed=[
+    ['source','Source'],
+    ['category','Category'],
+    ['status','Status'],
+    ['type','Type'],
+    ['changedFields','Changed'],
+    ['hasAddress','Address provided']
+  ];
+  allowed.forEach(function(pair){
+    var value=formatAuditValue(metadata[pair[0]]);
+    if(value)items.push({label:pair[1],value:value});
+  });
+  return items;
+}
 function renderAuditLogRows(rows){
   var table=document.getElementById('auditLogRows');
-  if(!rows||!rows.length){
+  var visibleRows=(rows||[]).filter(function(row){return Boolean(AUDIT_EVENT_LABELS[row.event_type]);});
+  if(!visibleRows.length){
     table.innerHTML='<tr><td colspan="4">No recent audit activity.</td></tr>';
     return;
   }
-  table.innerHTML=rows.map(function(row){
-    var metadata=row.metadata?JSON.stringify(row.metadata):'';
+  table.innerHTML=visibleRows.map(function(row){
+    var items=auditMetadataItems(row);
+    var metadata=items.length?items.map(function(item){
+      return '<span class="audit-chip">'+escapeHtml(item.label)+': '+escapeHtml(item.value)+'</span>';
+    }).join(''):'<span class="audit-muted">No public-facing details</span>';
     return '<tr>'+
       '<td>'+escapeHtml(formatAuditTime(row.timestamp))+'</td>'+
-      '<td>'+escapeHtml(row.event_type||'')+'</td>'+
-      '<td>'+escapeHtml(row.related_record_id||'')+'</td>'+
-      '<td>'+escapeHtml(metadata)+'</td>'+
+      '<td>'+escapeHtml(humanizeAuditEvent(row.event_type))+'</td>'+
+      '<td>'+escapeHtml(formatAuditRecord(row))+'</td>'+
+      '<td>'+metadata+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -1218,6 +1406,67 @@ function normalizeAnnouncementRecord(record){
     date:escapeHtml(formatAnnouncementDate(record.created_at||record.date))
   };
 }
+function populatePublicRequestCategories(){
+  var select=document.getElementById('publicReqCategory');
+  if(!select)return;
+  select.innerHTML=BOROUGH_CONFIG.serviceCategories.map(function(category){
+    return '<option value="'+escapeHtml(category)+'">'+escapeHtml(category)+'</option>';
+  }).join('');
+}
+function renderDepartments(){
+  var target=document.getElementById('departmentDirectory');
+  if(!target)return;
+  target.innerHTML=BOROUGH_CONFIG.departments.map(function(department){
+    return '<article class="content-card">'+
+      '<h3>'+escapeHtml(department.name)+'</h3>'+
+      '<div class="content-meta">'+
+      '<span><strong>Phone:</strong> '+escapeHtml(department.phone)+'</span>'+
+      '<span><strong>Email:</strong> '+escapeHtml(department.email)+'</span>'+
+      '<span><strong>Hours:</strong> '+escapeHtml(department.hours)+'</span>'+
+      '<span><strong>Use for:</strong> '+escapeHtml(department.notes)+'</span>'+
+      '</div>'+
+    '</article>';
+  }).join('');
+}
+function renderCalendar(){
+  var target=document.getElementById('calendarList');
+  var note=document.getElementById('calendarEventNote');
+  if(!target)return;
+  var eventAnnouncements=announcements.filter(function(item){return item.type==='event';});
+  var cards=BOROUGH_CONFIG.calendarItems.map(function(item){
+    return '<article class="content-card">'+
+      '<h3>'+escapeHtml(item.title)+'</h3>'+
+      '<p>'+escapeHtml(item.detail)+'</p>'+
+      '<p><strong>Status:</strong> '+escapeHtml(item.status)+'</p>'+
+    '</article>';
+  });
+  eventAnnouncements.forEach(function(event){
+    cards.push('<article class="content-card">'+
+      '<h3>'+escapeHtml(event.title)+'</h3>'+
+      '<p>'+escapeHtml(event.body)+'</p>'+
+      '<p><strong>Posted:</strong> '+escapeHtml(event.date)+'</p>'+
+    '</article>');
+  });
+  target.innerHTML=cards.join('');
+  if(note)note.style.display=eventAnnouncements.length?'none':'block';
+}
+function renderForms(){
+  var target=document.getElementById('formsList');
+  if(!target)return;
+  target.innerHTML=BOROUGH_CONFIG.forms.map(function(form){
+    return '<article class="content-card">'+
+      '<h3>'+escapeHtml(form.title)+'</h3>'+
+      '<p>'+escapeHtml(form.detail)+'</p>'+
+      '<p><strong>Status:</strong> '+escapeHtml(form.status)+'</p>'+
+    '</article>';
+  }).join('');
+}
+function populateResidentDepth(){
+  populatePublicRequestCategories();
+  renderDepartments();
+  renderCalendar();
+  renderForms();
+}
 async function loadAnnouncements(staffMode,existingToken){
   try{
     var headers={};
@@ -1236,10 +1485,12 @@ async function loadAnnouncements(staffMode,existingToken){
     }
     announcements=(data.announcements||[]).map(normalizeAnnouncementRecord).filter(Boolean);
     renderAnnouncements();
+    renderCalendar();
     updateHeroStats();
   }catch(err){
     console.warn('Announcement load failed:',err.message||err);
     renderAnnouncements();
+    renderCalendar();
     updateHeroStats();
   }
 }
@@ -1305,6 +1556,47 @@ async function addRequest(){
     alert(err&&err.message?err.message:'Failed to log request.');
   }
 }
+async function submitPublicRequest(){
+  var category=document.getElementById('publicReqCategory').value;
+  var location=document.getElementById('publicReqLocation').value.trim();
+  var title=document.getElementById('publicReqTitle').value.trim();
+  var description=document.getElementById('publicReqDescription').value.trim();
+  var result=document.getElementById('publicRequestResult');
+  result.className='public-request-result';
+  result.textContent='';
+  if(!category||!location||!title||!description){
+    result.className='public-request-result error';
+    result.textContent='Please add an issue type, location, short title, and description.';
+    return;
+  }
+  result.className='public-request-result success';
+  result.textContent='Submitting request...';
+  try{
+    var res=await fetch('/api/requests',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        category:category,
+        address:location,
+        title:title,
+        description:description
+      })
+    });
+    var data=await res.json();
+    if(!res.ok||!data.request){
+      throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to submit request.');
+    }
+    var trackingNumber=autoAddRequest(data.request);
+    result.className='public-request-result success';
+    result.innerHTML='Request submitted. Tracking number: <strong>'+escapeHtml(trackingNumber)+'</strong><br/>Borough staff can review it during normal operating hours. This portal is not for emergencies. For emergencies, call 911.<br/><button class="lookup-btn" type="button" data-check-tracking="'+escapeHtml(trackingNumber)+'">Check Status</button>';
+    document.getElementById('publicReqLocation').value='';
+    document.getElementById('publicReqTitle').value='';
+    document.getElementById('publicReqDescription').value='';
+  }catch(err){
+    result.className='public-request-result error';
+    result.textContent=err&&err.message?err.message:'Unable to submit request.';
+  }
+}
 function formatRequestDate(value){
   if(!value)return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
   var parsed=new Date(value);
@@ -1324,7 +1616,9 @@ function normalizeCreatedRequestRecord(record){
     desc:escapeHtml(desc),
     cat:escapeHtml(record.category||record.cat||'Other'),
     status:normalizeUiStatus(record.status),
-    date:escapeHtml(formatRequestDate(record.created_at||record.date))
+    date:escapeHtml(formatRequestDate(record.created_at||record.date)),
+    created_at:record.created_at||record.date||null,
+    updated_at:record.updated_at||null
   };
 }
 function autoAddRequest(data){
@@ -1499,6 +1793,7 @@ function initInteractiveControls(){
   bindClick('postAnnouncementBtn',postAnnouncement);
   bindClick('lookupBtn',lookupTicket);
   bindClick('addRequestBtn',addRequest);
+  bindClick('publicRequestSubmitBtn',submitPublicRequest);
   bindClick('applyRequestFiltersBtn',function(){loadStaffRequests();});
   bindClick('dashboardRefreshBtn',refreshStaffData);
   document.querySelectorAll('[data-tab]').forEach(function(button){
@@ -1541,6 +1836,16 @@ function initInteractiveControls(){
       updateRequestStatus(button.getAttribute('data-request-id'),button.getAttribute('data-request-update'));
     });
   }
+  var publicRequestResult=document.getElementById('publicRequestResult');
+  if(publicRequestResult){
+    publicRequestResult.addEventListener('click',function(event){
+      var button=event.target.closest('[data-check-tracking]');
+      if(!button)return;
+      document.getElementById('lookupInput').value=button.getAttribute('data-check-tracking')||'';
+      focusRequestLookup();
+      setTimeout(lookupTicket,150);
+    });
+  }
 }
 window.MagnoliaDebugLayout=function(){
   var viewport=document.documentElement.clientWidth;
@@ -1556,7 +1861,7 @@ window.MagnoliaDebugLayout=function(){
     };
   });
 };
-initInteractiveControls();renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
+populateResidentDepth();initInteractiveControls();renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
 </script>
 </body>
 </html>

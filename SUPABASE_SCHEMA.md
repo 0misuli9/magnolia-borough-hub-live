@@ -61,6 +61,8 @@ Important fields:
 
 The APIs write audit events for request creation/update, announcement creation/update/archive, chat conversations, and chat-created requests.
 
+Dashboard display filters the staff activity table to meaningful operational events such as request creation/update, announcement changes, knowledge changes, and staff sign-in events if present. Individual `chat_conversation` rows are counted as chat volume metrics rather than displayed as repetitive audit activity.
+
 ## Staff Profiles And Roles
 
 The migration creates `public.staff_profiles` for future staff management. Current server authorization trusts Supabase Auth `app_metadata` roles:

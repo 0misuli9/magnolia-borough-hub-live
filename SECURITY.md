@@ -53,6 +53,8 @@ Do not render resident titles, descriptions, addresses, or announcement bodies w
 
 The frontend no longer uses inline `onclick`/`onkeydown` handlers. Dynamic chat messages are rendered with DOM nodes and `textContent`. Some static templates still use `innerHTML`; user-generated fields in those templates must stay escaped with `escapeHtml`.
 
+Staff audit display intentionally hides low-value plumbing. Raw OpenAI response IDs, debug-only metadata, and raw JSON should not be shown in the dashboard table. Chat turns may still be counted as an operational metric without exposing resident message content.
+
 The current CSP still permits inline script/style because `index.html` contains an inline application script and inline CSS. A future strict-CSP pass should move frontend JavaScript and CSS into external files or add nonces/hashes, then remove `script-src 'unsafe-inline'`.
 
 ## Abuse Controls

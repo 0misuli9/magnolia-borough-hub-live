@@ -53,3 +53,5 @@ git push origin main
 - Confirm browser network payloads do not include backend-only secrets.
 - Test resident mobile at 360px and 390px: task cards route correctly, chat is readable, inputs do not zoom, and there is no horizontal whitespace.
 - Confirm public tracking lookup shows the status timeline and does not expose internal notes.
+- Confirm resident landing has no duplicate hero/stat/card navigation: hero only starts the card layer, stats are informational, and cards route to distinct sections.
+- Confirm Staff Dashboard audit rows use plain-English event names and do not show raw response IDs or raw JSON metadata.

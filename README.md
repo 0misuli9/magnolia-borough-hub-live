@@ -18,7 +18,10 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 - Announcements and requests persist in Supabase, not browser-local arrays.
 - Chat-created requests are persisted by `api/chat.js` with server-generated tracking numbers.
 - Resident status lookup returns a server-backed request summary and status timeline.
-- `BOROUGH_CONFIG` in `index.html` centralizes Magnolia-specific identity, contact placeholders, service categories, department directory content, calendar notes, and forms/public-records resources as groundwork for future municipality templates.
+- `BOROUGH_CONFIG` in `index.html` centralizes Magnolia-specific identity, contact placeholders, service categories, department directory content, calendar notes, and forms/public-records resources as groundwork for future municipality templates. Server-side triage tuning lives in `config/borough.js`.
+- Staff request queues include server-derived triage scoring so active requests sort by urgency, with manual `urgent` priority pinning above computed score.
+- The resident report form supports up to 3 staff-visible photos. Browser code resizes raster images before upload; the server stores them in a private Supabase Storage bucket and returns signed URLs only to staff detail views.
+- Staff can open a request detail drawer to review triage factors, photos, resident details, staff controls, internal notes, and an audit-backed timeline.
 - Staff audit activity is displayed as human-readable events. Chat volume is counted as a metric; individual chat-turn audit rows are not shown in the staff activity table.
 
 ## Environment Variables
@@ -88,6 +91,8 @@ Open the local URL printed by Vercel, usually `http://localhost:3000`.
 
 Run the migration in `supabase/migrations/20260528120000_municipal_operations_hardening.sql` in the Supabase SQL editor. It adds operational columns, status normalization, RLS policies, indexes, and knowledge-base fields.
 
+Run `supabase/migrations/20260529103000_request_photos.sql` before enabling photo uploads. It creates `public.request_photos`, enables RLS, and creates or verifies the private `request-photos` Storage bucket. The migration detects the `public.requests.id` type at runtime so the photo foreign key matches the deployed table.
+
 Required tables:
 
 - `requests`
@@ -95,6 +100,7 @@ Required tables:
 - `audit_logs`
 - `borough_knowledge`
 - `staff_profiles` created by the migration
+- `request_photos` created by the photo attachment migration
 
 See `SUPABASE_SCHEMA.md` for details.
 

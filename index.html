@@ -152,6 +152,7 @@
   .stat-label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
   .requests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
   .request-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);overflow-wrap:anywhere;word-break:break-word;}
+  .request-card[role="button"]{cursor:pointer;}
   .req-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
   .req-id{font-size:10px;color:var(--green-mid);font-weight:700;letter-spacing:1px;font-family:monospace;}
   .req-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
@@ -163,10 +164,17 @@
   .req-footer{display:flex;justify-content:space-between;align-items:center;}
   .req-cat{font-size:11px;color:var(--text-light);}
   .req-date{font-size:11px;color:var(--text-light);}
+  .triage-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:9px 0 7px;}
+  .triage-badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;font-size:10px;font-weight:800;padding:3px 8px;text-transform:uppercase;letter-spacing:0.5px;}
+  .triage-high{background:#fee2e2;color:var(--red);border:1px solid #fecaca;}
+  .triage-medium{background:var(--gold-light);color:#92400e;border:1px solid var(--gold-bright);}
+  .triage-low{background:var(--green-light);color:var(--green-dark);border:1px solid var(--border);}
+  .triage-chip{display:inline-flex;align-items:center;border-radius:999px;background:var(--green-pale);border:1px solid var(--border);color:var(--text-mid);font-size:10px;font-weight:800;padding:3px 8px;}
+  .triage-summary{font-size:11px;color:var(--text-mid);line-height:1.45;margin:0 0 8px;}
   .request-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
   .request-actions button{background:white;border:1px solid var(--border);border-radius:6px;color:var(--green-dark);cursor:pointer;font-size:11px;font-weight:700;padding:6px 8px;}
   .request-actions button:hover{background:var(--green-pale);}
-  .request-filters{display:grid;grid-template-columns:1fr 180px auto;gap:10px;background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .request-filters{display:grid;grid-template-columns:1fr 160px 160px auto;gap:10px;background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;box-shadow:var(--shadow);}
   .admin-panel{background:white;border:1.5px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
   .admin-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green-dark),var(--green-mid),var(--gold-bright));}
   .admin-panel h2{font-family:'Playfair Display',serif;font-size:17px;color:var(--green-dark);margin-bottom:16px;margin-top:6px;}
@@ -176,6 +184,14 @@
   .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green-mid);background:white;}
   .form-textarea{resize:vertical;min-height:75px;}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .photo-uploader{background:var(--green-pale);border:1.5px dashed var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
+  .photo-help{font-size:12px;line-height:1.5;color:var(--text-mid);margin:4px 0 10px;}
+  .photo-error{min-height:18px;color:var(--red);font-size:12px;font-weight:700;margin-top:8px;}
+  .photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:10px;}
+  .photo-preview{background:white;border:1px solid var(--border);border-radius:8px;padding:8px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+  .photo-preview img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;background:var(--off-white);}
+  .photo-preview-name{font-size:11px;color:var(--text-mid);line-height:1.35;margin-top:6px;overflow-wrap:anywhere;}
+  .photo-remove{width:100%;background:white;border:1px solid var(--border);border-radius:6px;color:var(--red);cursor:pointer;font-size:11px;font-weight:800;margin-top:6px;padding:6px;}
   .submit-btn{background:linear-gradient(135deg,var(--green),var(--green-dark));border:none;border-radius:8px;padding:11px 24px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(27,67,50,0.25);}
   .submit-btn:hover{transform:translateY(-1px);}
   .empty-state{text-align:center;padding:50px 20px;color:var(--text-light);}
@@ -220,6 +236,33 @@
   .audit-table th{background:var(--green-pale);color:var(--text-mid);font-size:10px;letter-spacing:0.8px;text-transform:uppercase;}
   .audit-table td{color:var(--text);}
   .audit-status{font-size:12px;color:var(--text-mid);}
+  .drawer-backdrop{position:fixed;inset:0;background:rgba(18,37,27,0.45);z-index:900;display:none;}
+  .drawer-backdrop.active{display:block;}
+  .request-drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:white;z-index:901;box-shadow:-12px 0 34px rgba(0,0,0,0.22);transform:translateX(104%);transition:transform 0.22s ease;display:flex;flex-direction:column;overflow:hidden;}
+  .request-drawer.active{transform:translateX(0);}
+  .drawer-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--green-pale);}
+  .drawer-header h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--green-dark);line-height:1.2;margin-bottom:3px;}
+  .drawer-subtitle{font-size:12px;color:var(--text-mid);}
+  .drawer-close{background:white;border:1.5px solid var(--border);border-radius:8px;color:var(--green-dark);cursor:pointer;font-size:18px;font-weight:800;line-height:1;padding:8px 11px;}
+  .drawer-body{flex:1;overflow-y:auto;padding:16px 20px 22px;}
+  .drawer-section{border-bottom:1px solid var(--border);padding:0 0 16px;margin-bottom:16px;}
+  .drawer-section:last-child{border-bottom:none;margin-bottom:0;}
+  .drawer-section h3{font-size:13px;color:var(--green-dark);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:10px;}
+  .drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .drawer-field{background:var(--off-white);border:1px solid var(--border);border-radius:8px;padding:9px 10px;overflow-wrap:anywhere;}
+  .drawer-field span{display:block;font-size:10px;font-weight:800;color:var(--text-light);letter-spacing:0.6px;text-transform:uppercase;margin-bottom:3px;}
+  .drawer-field strong{font-size:13px;color:var(--text);}
+  .drawer-description{font-size:13px;line-height:1.6;color:var(--text-mid);overflow-wrap:anywhere;}
+  .drawer-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+  .drawer-photo{display:block;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--off-white);}
+  .drawer-photo img{display:block;width:100%;aspect-ratio:1;object-fit:cover;}
+  .drawer-empty{font-size:12px;color:var(--text-light);line-height:1.5;}
+  .drawer-timeline{display:flex;flex-direction:column;gap:8px;}
+  .timeline-item{border-left:3px solid var(--green-light);padding:4px 0 4px 10px;font-size:12px;color:var(--text-mid);}
+  .timeline-item strong{display:block;color:var(--text);margin-bottom:2px;}
+  .timeline-meta{font-size:11px;color:var(--text-light);overflow-wrap:anywhere;}
+  .drawer-status{min-height:20px;font-size:12px;color:var(--text-mid);margin-top:10px;}
+  .drawer-save-row{display:flex;justify-content:flex-end;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;}
   .trust-footer{max-width:960px;margin:12px auto 0;padding:24px 20px 32px;color:var(--text-mid);font-size:12px;line-height:1.6;}
   .trust-footer-inner{border-top:1px solid var(--border);padding-top:18px;display:grid;grid-template-columns:1.2fr 1fr;gap:18px;}
   .trust-footer strong{color:var(--green-dark);}
@@ -261,6 +304,12 @@
     .audit-table td:nth-child(3)::before{content:'Record: ';font-weight:800;color:var(--text-mid);}
     .audit-table td:nth-child(4)::before{content:'Metadata: ';font-weight:800;color:var(--text-mid);}
     .login-actions{flex-wrap:wrap;}
+    .request-drawer{width:100vw;}
+    .drawer-header{padding:15px 14px;}
+    .drawer-body{padding:14px 14px 22px;}
+    .drawer-grid{grid-template-columns:1fr;}
+    .drawer-save-row{align-items:stretch;flex-direction:column;}
+    .drawer-save-row button{width:100%;}
     .trust-footer{padding:18px 12px 28px;}
     .trust-footer-inner{grid-template-columns:1fr;}
   }
@@ -444,6 +493,13 @@
         <label class="form-label" for="publicReqDescription">Description</label>
         <textarea class="form-textarea" id="publicReqDescription" maxlength="2000" placeholder="Include details that help borough staff understand the issue. Do not submit emergencies here."></textarea>
       </div>
+      <div class="photo-uploader">
+        <label class="form-label" for="publicReqPhotos">Photos (optional)</label>
+        <input class="form-input" id="publicReqPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple/>
+        <p class="photo-help">Attach up to 3 JPEG, PNG, or WebP photos. SVG and non-image files are not accepted. Photos are resized before upload to reduce file size and remove photo metadata.</p>
+        <div class="photo-error" id="photoUploadError" aria-live="polite"></div>
+        <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+      </div>
       <button class="submit-btn" id="publicRequestSubmitBtn" type="button">Submit Request</button>
       <div class="empty-note">Do not submit highly sensitive personal information. Information submitted through this portal may be reviewed by borough staff and may be retained according to applicable public records and records-retention requirements.</div>
       <div class="public-request-result" id="publicRequestResult" aria-live="polite"></div>
@@ -544,6 +600,11 @@
         <option value="resolved">Resolved</option>
         <option value="closed">Closed</option>
       </select>
+      <select class="form-select" id="requestSort" aria-label="Sort requests">
+        <option value="urgent">Most Urgent</option>
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+      </select>
       <button class="lookup-btn" id="applyRequestFiltersBtn" type="button">Apply</button>
     </div>
     <h2 class="section-title">All Requests</h2>
@@ -578,6 +639,11 @@
       <div class="metric-label">Resolved</div>
       <div class="metric-value" id="metricResolvedRequests">-</div>
       <div class="metric-note">Resolved request records</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Needs Attention</div>
+      <div class="metric-value" id="metricNeedsAttention">-</div>
+      <div class="metric-note">High or overdue active requests</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Top Topics</div>
@@ -626,6 +692,70 @@
     </div>
   </div>
 </div>
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="request-drawer" id="requestDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="drawer-header">
+    <div>
+      <h2 id="drawerTitle">Request Detail</h2>
+      <div class="drawer-subtitle" id="drawerSubtitle">Select a staff request to load details.</div>
+    </div>
+    <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close request detail">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <h3>Request</h3>
+      <div class="drawer-grid" id="drawerDetails"></div>
+      <p class="drawer-description" id="drawerDescription"></p>
+    </div>
+    <div class="drawer-section">
+      <h3>Triage</h3>
+      <div id="drawerTriage"></div>
+    </div>
+    <div class="drawer-section">
+      <h3>Photos</h3>
+      <div class="drawer-photo-grid" id="drawerPhotos"></div>
+    </div>
+    <div class="drawer-section">
+      <h3>Staff Controls</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="drawerStatus">Status</label>
+          <select class="form-select" id="drawerStatus">
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="drawerPriority">Manual Priority</label>
+          <select class="form-select" id="drawerPriority">
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="drawerAssignedTo">Assigned Department / Owner</label>
+        <input class="form-input" id="drawerAssignedTo" maxlength="120" placeholder="e.g. Public Works"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="drawerInternalNotes">Internal Notes</label>
+        <textarea class="form-textarea" id="drawerInternalNotes" maxlength="2000" placeholder="Staff-only operational notes. These never appear in public lookup."></textarea>
+      </div>
+      <div class="drawer-save-row">
+        <div class="drawer-status" id="drawerSaveStatus" aria-live="polite"></div>
+        <button class="submit-btn" id="drawerSaveBtn" type="button">Save Changes</button>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h3>Status Timeline</h3>
+      <div class="drawer-timeline" id="drawerTimeline"></div>
+    </div>
+  </div>
+</aside>
 <footer class="trust-footer">
   <div class="trust-footer-inner">
     <div>
@@ -660,6 +790,24 @@ const BOROUGH_CONFIG={
     'Permits & Zoning',
     'Other'
   ],
+  triage:{
+    // Tunable per municipality. Higher category weights rise faster in the staff urgency queue.
+    categoryUrgency:{
+      'Roads & Infrastructure':80,
+      'Utilities & Lighting':85,
+      'Parks & Public Spaces':35,
+      'Sanitation & Trash':50,
+      'Noise & Safety':90,
+      'Permits & Zoning':25,
+      'Other':30
+    },
+    // Target first-action windows by computed urgency tier.
+    slaTargetDays:{high:2,medium:5,low:10},
+    // Server uses these score cutoffs to label High, Medium, and Low triage.
+    triageThresholds:{high:60,medium:30},
+    // Staff-facing age badges.
+    agingThresholds:{newMaxDays:2,agingMaxDays:5,overdueMinDays:6}
+  },
   departments:[
     {name:'Borough Hall',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'General borough questions and routing.'},
     {name:'Borough Clerk',phone:'(856) 783-1520',email:'Email to be confirmed',hours:'Hours to be confirmed',notes:'Records, meetings, licenses, and general municipal administration.'},
@@ -694,6 +842,10 @@ let staffRefreshTimer=null;
 let convHistory=[];
 let lastResponseId=null;
 let isLoading=false;
+let pendingPhotoUploads=[];
+let activeDrawerTrackingNumber=null;
+let activeDrawerRequest=null;
+let drawerReturnFocus=null;
 
 function updateHeroStats(){
   var resolvedThisMonth=requests.filter(function(r){
@@ -746,6 +898,22 @@ function renderAnnouncements(){
   if(!announcements.length){list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No announcements yet.</p></div>';return;}
   list.innerHTML=announcements.map(a=>`<div class="announcement-card ${a.type}"><div class="ann-meta"><span class="ann-tag tag-${a.type}">${a.type==='urgent'?'🚨 Urgent':a.type==='event'?'📅 Event':'ℹ️ Info'}</span><span class="ann-date">${a.date}</span></div><div class="ann-title">${a.title}</div><div class="ann-body">${a.body}</div></div>`).join('');
 }
+function triageClass(level){
+  var value=String(level||'Low').toLowerCase();
+  return value==='high'?'triage-high':value==='medium'?'triage-medium':'triage-low';
+}
+function triageBadgeHtml(triage){
+  if(!triage)return '';
+  var level=escapeHtml(triage.level||'Low');
+  var score=Number.isFinite(Number(triage.score))?Number(triage.score):0;
+  var badges=Array.isArray(triage.badges)?triage.badges:[];
+  var chips=badges.map(function(badge){return '<span class="triage-chip">'+escapeHtml(badge)+'</span>';}).join('');
+  return '<div class="triage-row"><span class="triage-badge '+triageClass(triage.level)+'">'+level+' triage · '+score+'</span>'+chips+'</div>';
+}
+function triageSummaryHtml(triage){
+  if(!triage||!Array.isArray(triage.factors)||!triage.factors.length)return '';
+  return '<div class="triage-summary">'+triage.factors.map(escapeHtml).join(' · ')+'</div>';
+}
 function renderRequests(){
   const open=requests.filter(r=>r.status==='open').length;
   const prog=requests.filter(r=>normalizeUiStatus(r.status)==='in_progress').length;
@@ -758,8 +926,10 @@ function renderRequests(){
   const list=document.getElementById('reqList');
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
   list.innerHTML='<div class="requests-grid">'+requests.map(function(r){
-    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" data-request-id="${r.id}" data-request-update="open">Open</button><button type="button" data-request-id="${r.id}" data-request-update="in_progress">In Progress</button><button type="button" data-request-id="${r.id}" data-request-update="resolved">Resolve</button></div>`:'';
-    return `<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
+    var triage=window.isStaffAuthenticated?triageBadgeHtml(r.triage)+triageSummaryHtml(r.triage):'';
+    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" data-request-detail="${r.id}">Details</button><button type="button" data-request-id="${r.id}" data-request-update="open">Open</button><button type="button" data-request-id="${r.id}" data-request-update="in_progress">In Progress</button><button type="button" data-request-id="${r.id}" data-request-update="resolved">Resolve</button></div>`:'';
+    var cardAttrs=window.isStaffAuthenticated?` tabindex="0" role="button" aria-label="Open request ${r.id} detail"`:'';
+    return `<div class="request-card" data-request-card="${r.id}"${cardAttrs}><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div>${triage}<div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
   }).join('')+'</div>';
 }
 async function lookupTicket(){
@@ -1246,6 +1416,11 @@ const AUDIT_EVENT_LABELS={
   request_created:'Request created',
   request_created_from_chat:'Request created (chat)',
   request_updated:'Request updated',
+  request_status_changed:'Request status changed',
+  request_priority_changed:'Request priority changed',
+  request_assigned:'Request assigned',
+  internal_note_updated:'Internal note updated',
+  request_photo_attached:'Photo attached',
   announcement_created:'Announcement posted',
   announcement_updated:'Announcement updated',
   announcement_archived:'Announcement archived',
@@ -1280,6 +1455,9 @@ function auditMetadataItems(row){
     ['source','Source'],
     ['category','Category'],
     ['status','Status'],
+    ['from','From'],
+    ['to','To'],
+    ['photoCount','Photos'],
     ['type','Type'],
     ['changedFields','Changed'],
     ['hasAddress','Address provided']
@@ -1370,6 +1548,7 @@ async function fetchAdminMetrics(){
     setMetric('metricOpenRequests',metrics.open_requests||0);
     setMetric('metricInProgressRequests',metrics.in_progress_requests||0);
     setMetric('metricResolvedRequests',metrics.resolved_requests||0);
+    setMetric('metricNeedsAttention',metrics.needs_attention||0);
     setMetric('metricTopTopics',metrics.top_category||'-');
     setMetric('metricRecentActivity',metrics.recent_activity||0);
     renderDashboardList('dashboardLatestRequests',data.latest_requests||[],'request');
@@ -1383,6 +1562,7 @@ async function fetchAdminMetrics(){
     setMetric('metricOpenRequests','-');
     setMetric('metricInProgressRequests','-');
     setMetric('metricResolvedRequests','-');
+    setMetric('metricNeedsAttention','-');
     setMetric('metricTopTopics','-');
     setMetric('metricRecentActivity','-');
     renderDashboardList('dashboardLatestRequests',[],'request');
@@ -1556,6 +1736,131 @@ async function addRequest(){
     alert(err&&err.message?err.message:'Failed to log request.');
   }
 }
+function setPhotoError(message){
+  var box=document.getElementById('photoUploadError');
+  if(box)box.textContent=message||'';
+}
+function clearPublicRequestPhotoState(){
+  pendingPhotoUploads=[];
+  var input=document.getElementById('publicReqPhotos');
+  if(input)input.value='';
+  setPhotoError('');
+  renderPhotoPreviews();
+}
+function renderPhotoPreviews(){
+  var grid=document.getElementById('photoPreviewGrid');
+  if(!grid)return;
+  if(!pendingPhotoUploads.length){
+    grid.innerHTML='';
+    return;
+  }
+  grid.innerHTML=pendingPhotoUploads.map(function(photo,index){
+    return '<div class="photo-preview">'+
+      '<img src="'+photo.previewUrl+'" alt="Selected photo preview '+(index+1)+'"/>'+
+      '<div class="photo-preview-name">'+escapeHtml(photo.name)+'</div>'+
+      '<button class="photo-remove" type="button" data-remove-photo="'+index+'">Remove</button>'+
+    '</div>';
+  }).join('');
+}
+function canvasToDataUrl(canvas,quality){
+  return new Promise(function(resolve,reject){
+    canvas.toBlob(function(blob){
+      if(!blob){
+        reject(new Error('Unable to resize this photo.'));
+        return;
+      }
+      var reader=new FileReader();
+      reader.onload=function(){resolve({blob:blob,dataUrl:String(reader.result||'')});};
+      reader.onerror=function(){reject(new Error('Unable to read resized photo.'));};
+      reader.readAsDataURL(blob);
+    },'image/jpeg',quality);
+  });
+}
+function resizeImageFile(file){
+  return new Promise(function(resolve,reject){
+    var allowed=['image/jpeg','image/png','image/webp'];
+    if(!allowed.includes(file.type)){
+      reject(new Error('Only JPEG, PNG, or WebP photos are accepted. SVG and other files are not accepted.'));
+      return;
+    }
+    if(file.size>10*1024*1024){
+      reject(new Error('One selected photo is too large. Please use photos under 10 MB before resizing.'));
+      return;
+    }
+    var image=new Image();
+    var objectUrl=URL.createObjectURL(file);
+    image.onload=async function(){
+      try{
+        var maxDimension=1600;
+        var scale=Math.min(1,maxDimension/Math.max(image.width,image.height));
+        var canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round(image.width*scale));
+        canvas.height=Math.max(1,Math.round(image.height*scale));
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        var quality=0.82;
+        var output=await canvasToDataUrl(canvas,quality);
+        while(output.blob.size>1150*1024&&quality>0.58){
+          quality-=0.08;
+          output=await canvasToDataUrl(canvas,quality);
+        }
+        URL.revokeObjectURL(objectUrl);
+        resolve({
+          name:file.name,
+          type:'image/jpeg',
+          size:output.blob.size,
+          dataUrl:output.dataUrl,
+          previewUrl:output.dataUrl
+        });
+      }catch(err){
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      }
+    };
+    image.onerror=function(){
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Unable to read one selected photo.'));
+    };
+    image.src=objectUrl;
+  });
+}
+async function handlePhotoSelection(event){
+  var files=Array.from(event.target.files||[]);
+  setPhotoError('');
+  if(!files.length)return;
+  if(pendingPhotoUploads.length+files.length>3){
+    setPhotoError('Attach up to 3 photos per request.');
+    event.target.value='';
+    return;
+  }
+  try{
+    for(const file of files){
+      var resized=await resizeImageFile(file);
+      pendingPhotoUploads.push(resized);
+    }
+    renderPhotoPreviews();
+  }catch(err){
+    setPhotoError(err&&err.message?err.message:'Unable to prepare selected photos.');
+  }
+  event.target.value='';
+}
+async function uploadRequestPhotos(request,photos){
+  if(!photos.length)return {count:0};
+  var res=await fetch('/api/request-photos',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      request_id:request.id,
+      tracking_number:request.tracking_number,
+      photos:photos.map(function(photo){return {name:photo.name,dataUrl:photo.dataUrl};})
+    })
+  });
+  var data=await res.json();
+  if(!res.ok||!data.success){
+    throw new Error(data&&data.message?data.message:'The request was saved, but photos could not be attached.');
+  }
+  return data;
+}
 async function submitPublicRequest(){
   var category=document.getElementById('publicReqCategory').value;
   var location=document.getElementById('publicReqLocation').value.trim();
@@ -1587,11 +1892,21 @@ async function submitPublicRequest(){
       throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to submit request.');
     }
     var trackingNumber=autoAddRequest(data.request);
+    var photoMessage='';
+    if(pendingPhotoUploads.length){
+      try{
+        var uploadResult=await uploadRequestPhotos(data.request,pendingPhotoUploads);
+        photoMessage='<br/>Photos attached: <strong>'+escapeHtml(uploadResult.count||pendingPhotoUploads.length)+'</strong>.';
+      }catch(photoErr){
+        photoMessage='<br/><strong>Photo note:</strong> '+escapeHtml(photoErr&&photoErr.message?photoErr.message:'The request was saved, but photos could not be attached.');
+      }
+    }
     result.className='public-request-result success';
-    result.innerHTML='Request submitted. Tracking number: <strong>'+escapeHtml(trackingNumber)+'</strong><br/>Borough staff can review it during normal operating hours. This portal is not for emergencies. For emergencies, call 911.<br/><button class="lookup-btn" type="button" data-check-tracking="'+escapeHtml(trackingNumber)+'">Check Status</button>';
+    result.innerHTML='Request submitted. Tracking number: <strong>'+escapeHtml(trackingNumber)+'</strong>'+photoMessage+'<br/>Borough staff can review it during normal operating hours. This portal is not for emergencies. For emergencies, call 911.<br/><button class="lookup-btn" type="button" data-check-tracking="'+escapeHtml(trackingNumber)+'">Check Status</button>';
     document.getElementById('publicReqLocation').value='';
     document.getElementById('publicReqTitle').value='';
     document.getElementById('publicReqDescription').value='';
+    clearPublicRequestPhotoState();
   }catch(err){
     result.className='public-request-result error';
     result.textContent=err&&err.message?err.message:'Unable to submit request.';
@@ -1612,13 +1927,20 @@ function normalizeCreatedRequestRecord(record){
   if(address)desc=desc?desc+' - '+address:address;
   return {
     id:escapeHtml(trackingNumber||'Untracked'),
+    requestId:record.id||null,
+    trackingNumber:trackingNumber||'',
     title:escapeHtml(record.title||'Untitled request'),
     desc:escapeHtml(desc),
     cat:escapeHtml(record.category||record.cat||'Other'),
     status:normalizeUiStatus(record.status),
     date:escapeHtml(formatRequestDate(record.created_at||record.date)),
     created_at:record.created_at||record.date||null,
-    updated_at:record.updated_at||null
+    updated_at:record.updated_at||null,
+    priority:record.priority||'normal',
+    assigned_to:record.assigned_to||'',
+    internal_notes:record.internal_notes||'',
+    source:record.source||'public',
+    triage:record.triage||null
   };
 }
 function autoAddRequest(data){
@@ -1636,8 +1958,10 @@ async function loadStaffRequests(existingToken){
   var params=new URLSearchParams();
   var searchEl=document.getElementById('requestSearch');
   var statusEl=document.getElementById('requestStatusFilter');
+  var sortEl=document.getElementById('requestSort');
   if(searchEl&&searchEl.value.trim())params.set('search',searchEl.value.trim());
   if(statusEl&&statusEl.value)params.set('status',statusEl.value);
+  if(sortEl&&sortEl.value)params.set('sort',sortEl.value);
   var url='/api/requests'+(params.toString()?'?'+params.toString():'');
   var res=await fetch(url,{
     headers:{Authorization:'Bearer '+token}
@@ -1675,6 +1999,187 @@ async function updateRequestStatus(trackingNumber,status){
     showToast('Request '+trackingNumber+' updated.');
   }catch(err){
     alert(err&&err.message?err.message:'Failed to update request.');
+  }
+}
+function setDrawerStatus(message,isError){
+  var status=document.getElementById('drawerSaveStatus');
+  if(!status)return;
+  status.textContent=message||'';
+  status.style.color=isError?'var(--red)':'var(--text-mid)';
+}
+function drawerField(label,value){
+  return '<div class="drawer-field"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value||'Not provided')+'</strong></div>';
+}
+function renderDrawerTriage(triage){
+  var target=document.getElementById('drawerTriage');
+  if(!target)return;
+  if(!triage){
+    target.innerHTML='<p class="drawer-empty">No triage data loaded.</p>';
+    return;
+  }
+  target.innerHTML=triageBadgeHtml(triage)+triageSummaryHtml(triage);
+}
+function renderDrawerPhotos(photos){
+  var target=document.getElementById('drawerPhotos');
+  if(!target)return;
+  if(!photos||!photos.length){
+    target.innerHTML='<p class="drawer-empty">No photos attached to this request.</p>';
+    return;
+  }
+  target.innerHTML=photos.map(function(photo,index){
+    if(!photo.signed_url)return '';
+    return '<a class="drawer-photo" href="'+escapeHtml(photo.signed_url)+'" target="_blank" rel="noopener" aria-label="Open attached photo '+(index+1)+'"><img src="'+escapeHtml(photo.signed_url)+'" alt="Attached request photo '+(index+1)+'"/></a>';
+  }).join('')||'<p class="drawer-empty">Photos are attached, but signed access could not be created.</p>';
+}
+function timelineMetaText(event){
+  var metadata=event&&event.metadata?event.metadata:{};
+  var parts=[];
+  if(metadata.from||metadata.to)parts.push((metadata.from||'blank')+' to '+(metadata.to||'blank'));
+  if(metadata.status)parts.push('Status: '+metadata.status);
+  if(metadata.photoCount)parts.push(metadata.photoCount+' photo'+(metadata.photoCount===1?'':'s'));
+  if(Array.isArray(metadata.changedFields)&&metadata.changedFields.length)parts.push('Fields: '+metadata.changedFields.join(', '));
+  return parts.join(' · ');
+}
+function renderDrawerTimeline(request,events){
+  var target=document.getElementById('drawerTimeline');
+  if(!target)return;
+  var rows=[{
+    label:'Submitted',
+    timestamp:request.created_at,
+    metadata:{status:request.status}
+  }].concat(Array.isArray(events)?events:[]);
+  target.innerHTML=rows.map(function(row){
+    return '<div class="timeline-item"><strong>'+escapeHtml(row.label||'Activity')+'</strong><div>'+escapeHtml(formatAuditTime(row.timestamp||request.created_at))+'</div><div class="timeline-meta">'+escapeHtml(timelineMetaText(row))+'</div></div>';
+  }).join('');
+}
+function renderDrawerDetails(payload){
+  var request=payload.request||{};
+  activeDrawerRequest=request;
+  activeDrawerTrackingNumber=request.tracking_number||activeDrawerTrackingNumber;
+  document.getElementById('drawerTitle').textContent=request.tracking_number||'Request Detail';
+  document.getElementById('drawerSubtitle').textContent=(request.title||'Untitled request')+' · '+statusLabel(request.status);
+  document.getElementById('drawerDetails').innerHTML=[
+    drawerField('Tracking Number',request.tracking_number),
+    drawerField('Status',statusLabel(request.status)),
+    drawerField('Category',request.category),
+    drawerField('Location',request.address),
+    drawerField('Submitted',formatRequestDate(request.created_at)),
+    drawerField('Source',request.source||'public')
+  ].join('');
+  document.getElementById('drawerDescription').textContent=request.description||'No description provided.';
+  document.getElementById('drawerStatus').value=normalizeUiStatus(request.status);
+  document.getElementById('drawerPriority').value=String(request.priority||'normal').toLowerCase();
+  document.getElementById('drawerAssignedTo').value=request.assigned_to||'';
+  document.getElementById('drawerInternalNotes').value=request.internal_notes||'';
+  renderDrawerTriage(payload.triage||request.triage);
+  renderDrawerPhotos(payload.photos||[]);
+  renderDrawerTimeline(request,payload.events||[]);
+  setDrawerStatus('');
+}
+function setDrawerLoading(trackingNumber){
+  document.getElementById('drawerTitle').textContent=trackingNumber||'Request Detail';
+  document.getElementById('drawerSubtitle').textContent='Loading request details...';
+  document.getElementById('drawerDetails').innerHTML='';
+  document.getElementById('drawerDescription').textContent='';
+  document.getElementById('drawerTriage').innerHTML='<p class="drawer-empty">Loading triage...</p>';
+  document.getElementById('drawerPhotos').innerHTML='<p class="drawer-empty">Loading photos...</p>';
+  document.getElementById('drawerTimeline').innerHTML='<p class="drawer-empty">Loading timeline...</p>';
+  setDrawerStatus('');
+}
+function openDrawerShell(trigger){
+  var drawer=document.getElementById('requestDrawer');
+  var backdrop=document.getElementById('drawerBackdrop');
+  drawerReturnFocus=trigger||document.activeElement;
+  drawer.classList.add('active');
+  backdrop.classList.add('active');
+  drawer.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){document.getElementById('drawerCloseBtn').focus();},30);
+}
+function closeRequestDrawer(){
+  var drawer=document.getElementById('requestDrawer');
+  var backdrop=document.getElementById('drawerBackdrop');
+  drawer.classList.remove('active');
+  backdrop.classList.remove('active');
+  drawer.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
+  activeDrawerTrackingNumber=null;
+  activeDrawerRequest=null;
+  if(drawerReturnFocus&&typeof drawerReturnFocus.focus==='function'){
+    drawerReturnFocus.focus();
+  }
+}
+async function openRequestDrawer(trackingNumber,trigger){
+  if(!window.isStaffAuthenticated)return showLoginModal();
+  activeDrawerTrackingNumber=trackingNumber;
+  openDrawerShell(trigger);
+  setDrawerLoading(trackingNumber);
+  try{
+    var token=await getStaffAccessToken();
+    var res=await fetch('/api/requests?tracking_number='+encodeURIComponent(trackingNumber)+'&staff=1',{
+      headers:{Authorization:'Bearer '+token}
+    });
+    var data=await res.json();
+    if(!res.ok||!data.request){
+      throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to load request detail.');
+    }
+    renderDrawerDetails(data);
+  }catch(err){
+    setDrawerStatus(err&&err.message?err.message:'Unable to load request detail.',true);
+  }
+}
+async function saveRequestDrawer(){
+  if(!activeDrawerTrackingNumber||!activeDrawerRequest)return;
+  var payload={
+    status:document.getElementById('drawerStatus').value,
+    priority:document.getElementById('drawerPriority').value,
+    assigned_to:document.getElementById('drawerAssignedTo').value.trim(),
+    internal_notes:document.getElementById('drawerInternalNotes').value
+  };
+  setDrawerStatus('Saving...');
+  document.getElementById('drawerSaveBtn').disabled=true;
+  try{
+    var token=await getStaffAccessToken();
+    var res=await fetch('/api/requests?tracking_number='+encodeURIComponent(activeDrawerTrackingNumber),{
+      method:'PATCH',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:'Bearer '+token
+      },
+      body:JSON.stringify(payload)
+    });
+    var data=await res.json();
+    if(!res.ok){
+      throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to save request.');
+    }
+    await loadStaffRequests(token);
+    if(currentStaffView==='dashboard')await fetchAdminMetrics(token);
+    await openRequestDrawer(activeDrawerTrackingNumber,drawerReturnFocus);
+    showToast('Request '+activeDrawerTrackingNumber+' saved.');
+  }catch(err){
+    setDrawerStatus(err&&err.message?err.message:'Unable to save request.',true);
+  }
+  document.getElementById('drawerSaveBtn').disabled=false;
+}
+function trapDrawerFocus(event){
+  var drawer=document.getElementById('requestDrawer');
+  if(!drawer.classList.contains('active'))return;
+  if(event.key==='Escape'){
+    event.preventDefault();
+    closeRequestDrawer();
+    return;
+  }
+  if(event.key!=='Tab')return;
+  var focusable=Array.from(drawer.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.disabled&&el.offsetParent!==null;});
+  if(!focusable.length)return;
+  var first=focusable[0];
+  var last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){
+    event.preventDefault();
+    last.focus();
+  }else if(!event.shiftKey&&document.activeElement===last){
+    event.preventDefault();
+    first.focus();
   }
 }
 function escapeHtml(text){
@@ -1796,6 +2301,25 @@ function initInteractiveControls(){
   bindClick('publicRequestSubmitBtn',submitPublicRequest);
   bindClick('applyRequestFiltersBtn',function(){loadStaffRequests();});
   bindClick('dashboardRefreshBtn',refreshStaffData);
+  bindClick('drawerCloseBtn',closeRequestDrawer);
+  bindClick('drawerBackdrop',closeRequestDrawer);
+  bindClick('drawerSaveBtn',saveRequestDrawer);
+  document.addEventListener('keydown',trapDrawerFocus);
+  var publicPhotos=document.getElementById('publicReqPhotos');
+  if(publicPhotos)publicPhotos.addEventListener('change',handlePhotoSelection);
+  var photoGrid=document.getElementById('photoPreviewGrid');
+  if(photoGrid){
+    photoGrid.addEventListener('click',function(event){
+      var button=event.target.closest('[data-remove-photo]');
+      if(!button)return;
+      var index=Number(button.getAttribute('data-remove-photo'));
+      if(Number.isFinite(index)){
+        pendingPhotoUploads.splice(index,1);
+        renderPhotoPreviews();
+        setPhotoError('');
+      }
+    });
+  }
   document.querySelectorAll('[data-tab]').forEach(function(button){
     button.addEventListener('click',function(){
       switchTab(button.getAttribute('data-tab'),button);
@@ -1818,6 +2342,10 @@ function initInteractiveControls(){
   });
   var chatInput=document.getElementById('chatInput');
   if(chatInput)chatInput.addEventListener('keydown',handleKey);
+  var requestSort=document.getElementById('requestSort');
+  if(requestSort)requestSort.addEventListener('change',function(){
+    if(window.isStaffAuthenticated)loadStaffRequests();
+  });
   document.querySelectorAll('[data-action]').forEach(function(button){
     button.addEventListener('click',function(){
       handleResidentAction(button.getAttribute('data-action'));
@@ -1831,9 +2359,26 @@ function initInteractiveControls(){
   var requestList=document.getElementById('reqList');
   if(requestList){
     requestList.addEventListener('click',function(event){
+      var detailButton=event.target.closest('[data-request-detail]');
+      if(detailButton){
+        openRequestDrawer(detailButton.getAttribute('data-request-detail'),detailButton);
+        return;
+      }
       var button=event.target.closest('[data-request-update]');
-      if(!button)return;
-      updateRequestStatus(button.getAttribute('data-request-id'),button.getAttribute('data-request-update'));
+      if(button){
+        updateRequestStatus(button.getAttribute('data-request-id'),button.getAttribute('data-request-update'));
+        return;
+      }
+      var card=event.target.closest('[data-request-card]');
+      if(!card||event.target.closest('button'))return;
+      openRequestDrawer(card.getAttribute('data-request-card'),card);
+    });
+    requestList.addEventListener('keydown',function(event){
+      if(event.key!=='Enter'&&event.key!==' ')return;
+      var card=event.target.closest('[data-request-card]');
+      if(!card||event.target.closest('button'))return;
+      event.preventDefault();
+      openRequestDrawer(card.getAttribute('data-request-card'),card);
     });
   }
   var publicRequestResult=document.getElementById('publicRequestResult');

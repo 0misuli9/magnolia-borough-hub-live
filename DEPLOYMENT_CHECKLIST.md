@@ -14,6 +14,7 @@
   - optional `STAFF_REQUIRE_MFA`
 - Keep `OPENAI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` backend-only.
 - Run `supabase/migrations/20260528120000_municipal_operations_hardening.sql` in Supabase.
+- Run `supabase/migrations/20260529103000_request_photos.sql` in Supabase before enabling resident photo uploads. Confirm the `request-photos` Storage bucket is private.
 - Create or verify Supabase Auth staff users with staff role metadata.
 - Verify RLS policies are present.
 - Confirm staff accounts are individual whenever possible; shared testing accounts reduce audit value.
@@ -40,7 +41,7 @@ Expected: no matches.
 
 ```powershell
 git add README.md index.html api supabase vercel.json SECURITY.md DEPLOYMENT_CHECKLIST.md TEST_PLAN.md SUPABASE_SCHEMA.md
-git commit -m "fix(mobile): improve resident phone UX and accessibility"
+git commit -m "feat: triage scoring engine, resident photo upload, staff request detail drawer"
 git push origin main
 ```
 
@@ -55,3 +56,6 @@ git push origin main
 - Confirm public tracking lookup shows the status timeline and does not expose internal notes.
 - Confirm resident landing has no duplicate hero/stat/card navigation: hero only starts the card layer, stats are informational, and cards route to distinct sections.
 - Confirm Staff Dashboard audit rows use plain-English event names and do not show raw response IDs or raw JSON metadata.
+- Submit a resident report with photos and confirm photos do not appear in public tracking lookup.
+- Sign in as staff, open the request detail drawer, and confirm photos load through signed URLs, triage factors render, internal notes save, and audit events do not include note text.
+- Confirm Service Requests sorted by Most Urgent pins manual `urgent` first and then sorts by computed triage score.

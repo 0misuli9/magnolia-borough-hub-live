@@ -29,6 +29,29 @@ Legacy values are normalized:
 
 Public lookup happens through `/api/requests?tracking_number=MGN-####`; public browser clients should not list this table directly.
 
+Triage is derived server-side at read time and is not stored in the table. Active `open` and `in_progress` requests receive a computed score, level, badges, and factor explanation using category urgency, age, SLA target, and simple duplicate heuristics. The existing `priority` field remains a manual staff override; `urgent` pins a request above computed triage order.
+
+## Request Photos
+
+Expected table after running `supabase/migrations/20260529103000_request_photos.sql`: `public.request_photos`
+
+Important fields:
+
+- `id`: UUID primary key
+- `request_id`: foreign key to `public.requests(id)`; the migration detects the deployed requests primary-key type at runtime
+- `storage_path`: private Supabase Storage object path
+- `content_type`: currently `image/jpeg`
+- `created_at`
+
+Storage bucket:
+
+- Bucket id/name: `request-photos`
+- Public: `false`
+- Allowed MIME type: `image/jpeg`
+- Size limit: 1.25 MB per stored resized image
+
+All photo objects are private. Residents upload photos immediately after creating a request, but staff access is mediated by the server through short-lived signed URLs in the request detail drawer. Public request lookup must not expose photos, storage paths, signed URLs, assignment, manual priority, or internal notes.
+
 ## Announcements
 
 Expected table: `public.announcements`
@@ -59,9 +82,9 @@ Important fields:
 - `related_record_id`
 - `metadata`
 
-The APIs write audit events for request creation/update, announcement creation/update/archive, chat conversations, and chat-created requests.
+The APIs write audit events for request creation/update, status changes, priority changes, assignment changes, internal note updates, photo attachments, announcement creation/update/archive, chat conversations, and chat-created requests.
 
-Dashboard display filters the staff activity table to meaningful operational events such as request creation/update, announcement changes, knowledge changes, and staff sign-in events if present. Individual `chat_conversation` rows are counted as chat volume metrics rather than displayed as repetitive audit activity.
+Dashboard display filters the staff activity table to meaningful operational events such as request creation/update, request photo attachment, announcement changes, knowledge changes, and staff sign-in events if present. Individual `chat_conversation` rows are counted as chat volume metrics rather than displayed as repetitive audit activity. Audit metadata should stay sanitized: status transitions, changed field names, tracking numbers, and photo counts are acceptable; internal note text, resident message content, raw response IDs, and image data are not.
 
 ## Staff Profiles And Roles
 

@@ -30,6 +30,7 @@ Search checks:
 rg -n "OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|ADMIN_SECRET|x-admin-secret" index.html
 rg -n "requests\.find|localStorage|sessionStorage" index.html api
 rg -n "/api/requests|/api/announcements|/api/dashboard" index.html api
+rg -n "image/svg|image/jpeg|image/png|image/webp|request-photos" index.html api supabase
 ```
 
 ## Manual Smoke Tests
@@ -126,12 +127,45 @@ Expected: every tab changes actual content.
 
 Expected: metrics and audit logs update.
 
+### Test 4A - Triage Queue
+
+1. Sign in as staff.
+2. Create or seed active requests in safety-relevant and lower-risk categories.
+3. Open Service Requests with sort set to Most Urgent.
+4. Confirm manual `urgent` priority appears first.
+5. Confirm remaining active requests sort by triage score.
+6. Confirm triage level, score, aging badges, and factor summary render with text labels.
+
+Expected: the staff queue explains why a request is ranked and does not rely on color alone.
+
+### Test 4B - Resident Photo Upload
+
+1. Open Report a Problem as a resident.
+2. Attach 1 to 3 JPEG, PNG, or WebP files.
+3. Confirm thumbnails render and remove buttons work.
+4. Try an SVG or non-image file.
+5. Submit the request.
+
+Expected: SVG/non-image files are rejected, valid images are resized before upload, the request receives a server tracking number, and the confirmation notes the photo count. Photos are not visible in public lookup.
+
+### Test 4C - Staff Request Detail Drawer
+
+1. Sign in as staff.
+2. Click a request card or press Enter/Space on a focused card.
+3. Confirm the drawer opens with details, triage, photos, controls, and timeline.
+4. Change status, manual priority, assignment, and internal notes.
+5. Save.
+6. Refresh the public tracking lookup for the same request.
+
+Expected: the drawer traps focus and closes with Escape, queue/dashboard refresh after save, clean audit events are written, and internal notes never appear publicly.
+
 ### Test 5 - Security
 
 1. Open browser developer tools.
 2. Confirm no `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, or `ADMIN_SECRET` appears in JS or network payloads.
 3. Attempt staff API without token.
 4. Attempt staff API with invalid token.
+5. Confirm request photo signed URLs appear only in authenticated staff drawer responses.
 
 Expected: protected APIs return 401 or 403.
 

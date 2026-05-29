@@ -1,6 +1,7 @@
 import { getServiceSupabaseClient } from "./_audit.js";
 import { requireStaff } from "./_staff-auth.js";
 import { getMethodNotAllowed, normalizeCategory, normalizeStatus, sendJson } from "./_http.js";
+import { computeRequestTriage } from "./_triage.js";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 const ANNOUNCEMENTS_TABLE = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
@@ -8,6 +9,11 @@ const STAFF_AUDIT_EVENTS = [
   "request_created",
   "request_created_from_chat",
   "request_updated",
+  "request_status_changed",
+  "request_priority_changed",
+  "request_assigned",
+  "internal_note_updated",
+  "request_photo_attached",
   "announcement_created",
   "announcement_updated",
   "announcement_archived",
@@ -73,6 +79,13 @@ function countResolvedSince(requests, days) {
   }).length;
 }
 
+function countNeedsAttention(requests) {
+  return requests.filter((request) => {
+    const triage = computeRequestTriage(request, requests);
+    return triage.level === "High" || triage.badges.includes("Overdue");
+  }).length;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return getMethodNotAllowed(res, ["GET"]);
@@ -135,6 +148,7 @@ export default async function handler(req, res) {
         resolved_last_7_days: countResolvedSince(requests, 7),
         resolved_last_30_days: countResolvedSince(requests, 30),
         closed_requests: countByStatus(requests, "closed"),
+        needs_attention: countNeedsAttention(requests),
         recent_activity: auditRows.length,
         top_category: getTopCategory(requests),
       },

@@ -1,5 +1,6 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
 import { getAuthenticatedStaff, requireStaff } from "./_staff-auth.js";
+import { computeRequestTriage } from "./_triage.js";
 import {
   checkRateLimit,
   clampText,
@@ -15,11 +16,14 @@ import {
 } from "./_http.js";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
+const PHOTOS_TABLE = "request_photos";
 
-function normalizeRequestRecord(record) {
+function normalizeRequestRecord(record, allRecords = []) {
   if (!record) {
     return null;
   }
+
+  const triage = computeRequestTriage(record, allRecords);
 
   return {
     id: record.id || null,
@@ -35,7 +39,26 @@ function normalizeRequestRecord(record) {
     source: record.source || "public",
     created_at: record.created_at || null,
     updated_at: record.updated_at || null,
+    triage,
   };
+}
+
+function normalizePublicRequestRecord(record, options = {}) {
+  const normalized = normalizeRequestRecord(record, [record]);
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (!options.includeId) {
+    delete normalized.id;
+  }
+  delete normalized.internal_notes;
+  delete normalized.assigned_to;
+  delete normalized.priority;
+  delete normalized.triage;
+
+  return normalized;
 }
 
 function safeRequestShape(body) {
@@ -104,7 +127,8 @@ function buildPatchRecord(body) {
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "priority")) {
-    patch.priority = clampText(body.priority, 40) || "normal";
+    const priority = String(clampText(body.priority, 40) || "normal").toLowerCase();
+    patch.priority = ["low", "normal", "high", "urgent"].includes(priority) ? priority : "normal";
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "assigned_to")) {
@@ -172,9 +196,113 @@ async function handleLookup(req, res, trackingNumber) {
     });
   }
 
+  const staff = await getAuthenticatedStaff(req);
+  const wantsStaffDetail = staff.authenticated && getQueryParam(req, "staff") === "1";
+
+  if (wantsStaffDetail) {
+    return handleStaffDetail(req, res, data[0], staff);
+  }
+
   return sendJson(res, 200, {
     success: true,
-    request: normalizeRequestRecord(data[0]),
+    request: normalizePublicRequestRecord(data[0]),
+  });
+}
+
+function normalizePhotoRecord(record, signedUrl) {
+  return {
+    id: record.id || null,
+    request_id: record.request_id || null,
+    storage_path: record.storage_path || "",
+    content_type: record.content_type || "image/jpeg",
+    created_at: record.created_at || null,
+    signed_url: signedUrl || "",
+  };
+}
+
+function humanizeAuditEvent(eventType) {
+  const labels = {
+    request_created: "Request submitted",
+    request_created_from_chat: "Request submitted by chat",
+    request_updated: "Request updated",
+    request_status_changed: "Status changed",
+    request_assigned: "Assignment changed",
+    request_priority_changed: "Priority changed",
+    internal_note_updated: "Internal note updated",
+    request_photo_attached: "Photo attached",
+  };
+
+  return labels[eventType] || String(eventType || "Activity").replace(/_/g, " ");
+}
+
+function normalizeRequestEvent(row) {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+
+  return {
+    timestamp: row.timestamp || null,
+    event_type: row.event_type || "",
+    label: humanizeAuditEvent(row.event_type),
+    metadata: {
+      from: metadata.from || null,
+      to: metadata.to || null,
+      status: metadata.status || null,
+      changedFields: Array.isArray(metadata.changedFields) ? metadata.changedFields : [],
+      photoCount: Number.isFinite(Number(metadata.photoCount)) ? Number(metadata.photoCount) : null,
+    },
+  };
+}
+
+async function handleStaffDetail(req, res, rawRequest, staff) {
+  const supabase = getServiceSupabaseClient();
+  const activeRecordsResult = await supabase
+    .from(REQUESTS_TABLE)
+    .select("id,tracking_number,category,address,status,created_at,updated_at,priority")
+    .in("status", ["open", "in_progress"])
+    .limit(250);
+  const activeRecords = activeRecordsResult.error || !Array.isArray(activeRecordsResult.data)
+    ? [rawRequest]
+    : activeRecordsResult.data;
+  const request = normalizeRequestRecord(rawRequest, activeRecords);
+
+  const [photoResult, auditResult] = await Promise.all([
+    supabase
+      .from(PHOTOS_TABLE)
+      .select("*")
+      .eq("request_id", rawRequest.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("audit_logs")
+      .select("timestamp,event_type,related_record_id,metadata")
+      .eq("related_record_id", rawRequest.tracking_number)
+      .order("timestamp", { ascending: true })
+      .limit(50),
+  ]);
+
+  let photos = [];
+
+  if (!photoResult.error && Array.isArray(photoResult.data)) {
+    photos = await Promise.all(
+      photoResult.data.map(async (photo) => {
+        const { data } = await supabase.storage.from("request-photos").createSignedUrl(photo.storage_path, 10 * 60);
+        return normalizePhotoRecord(photo, data?.signedUrl || "");
+      }),
+    );
+  }
+
+  const events = auditResult.error || !Array.isArray(auditResult.data)
+    ? []
+    : auditResult.data.map(normalizeRequestEvent);
+
+  return sendJson(res, 200, {
+    success: true,
+    request,
+    triage: request.triage,
+    photos,
+    events,
+    staff: {
+      id: staff.user.id,
+      email: staff.user.email,
+    },
   });
 }
 
@@ -190,8 +318,9 @@ async function handleStaffList(req, res) {
   const status = normalizeStatus(getQueryParam(req, "status"), "");
   const category = getQueryParam(req, "category");
   const search = clampText(getQueryParam(req, "search"), 120);
-  const order = getQueryParam(req, "sort") === "oldest" ? "created_at" : "created_at";
-  const ascending = getQueryParam(req, "sort") === "oldest";
+  const sort = getQueryParam(req, "sort") || "urgent";
+  const order = sort === "oldest" ? "created_at" : "created_at";
+  const ascending = sort === "oldest";
 
   let query = supabase
     .from(REQUESTS_TABLE)
@@ -220,9 +349,26 @@ async function handleStaffList(req, res) {
     throw error;
   }
 
+  const normalizedRequests = (Array.isArray(data) ? data : []).map((record) => normalizeRequestRecord(record, data));
+  const sortedRequests = normalizedRequests.sort((left, right) => {
+    if (sort === "newest") {
+      return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
+    }
+
+    if (sort === "oldest") {
+      return new Date(left.created_at || 0).getTime() - new Date(right.created_at || 0).getTime();
+    }
+
+    const leftUrgent = String(left.priority || "").toLowerCase() === "urgent";
+    const rightUrgent = String(right.priority || "").toLowerCase() === "urgent";
+    const priorityDelta = Number(rightUrgent) - Number(leftUrgent);
+    if (priorityDelta !== 0) return priorityDelta;
+    return (right.triage?.score || 0) - (left.triage?.score || 0);
+  });
+
   return sendJson(res, 200, {
     success: true,
-    requests: (Array.isArray(data) ? data : []).map(normalizeRequestRecord),
+    requests: sortedRequests,
     count: count || 0,
     limit,
     offset,
@@ -294,7 +440,7 @@ async function handleCreate(req, res) {
 
   return sendJson(res, 201, {
     success: true,
-    request: createdRequest,
+    request: staff.authenticated ? createdRequest : normalizePublicRequestRecord(data, { includeId: true }),
   });
 }
 
@@ -336,6 +482,14 @@ async function handlePatch(req, res) {
   }
 
   const supabase = getServiceSupabaseClient();
+  let existingQuery = supabase.from(REQUESTS_TABLE).select("*").single();
+  existingQuery = recordId ? existingQuery.eq("id", recordId) : existingQuery.eq("tracking_number", trackingNumber);
+  const { data: existingRecord, error: existingError } = await existingQuery;
+
+  if (existingError) {
+    throw existingError;
+  }
+
   let query = supabase.from(REQUESTS_TABLE).update(patch).select("*").single();
   query = recordId ? query.eq("id", recordId) : query.eq("tracking_number", trackingNumber);
 
@@ -346,10 +500,37 @@ async function handlePatch(req, res) {
   }
 
   const updatedRequest = normalizeRequestRecord(data);
+  const changedFields = patchKeys.filter((field) => field !== "updated_at");
   await writeAudit("request_updated", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
-    changedFields: patchKeys,
+    changedFields,
     status: updatedRequest.status,
   });
+
+  if (Object.prototype.hasOwnProperty.call(patch, "status") && normalizeStatus(existingRecord.status) !== updatedRequest.status) {
+    await writeAudit("request_status_changed", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
+      from: normalizeStatus(existingRecord.status),
+      to: updatedRequest.status,
+    });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patch, "priority") && String(existingRecord.priority || "normal") !== updatedRequest.priority) {
+    await writeAudit("request_priority_changed", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
+      from: existingRecord.priority || "normal",
+      to: updatedRequest.priority,
+    });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patch, "assigned_to") && String(existingRecord.assigned_to || "") !== String(updatedRequest.assigned_to || "")) {
+    await writeAudit("request_assigned", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
+      changed: true,
+    });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patch, "internal_notes") && String(existingRecord.internal_notes || "") !== String(updatedRequest.internal_notes || "")) {
+    await writeAudit("internal_note_updated", staff.user.id, updatedRequest.tracking_number || updatedRequest.id, {
+      changed: true,
+    });
+  }
 
   return sendJson(res, 200, {
     success: true,

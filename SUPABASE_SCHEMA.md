@@ -27,9 +27,25 @@ Legacy values are normalized:
 - `pending` -> `open`
 - `progress` -> `in_progress`
 
-Public lookup happens through `/api/requests?tracking_number=MGN-####`; public browser clients should not list this table directly.
+Public lookup happens through `/api/requests?tracking_number=MGN-7K9Q2M8P`; existing legacy `MGN-####` numbers remain valid. Public browser clients should not list this table directly.
+
+Public lookup responses intentionally omit resident address, description, assignment, manual priority, internal notes, private photo paths, and signed URLs. Staff detail responses remain the operational surface for full records.
 
 Triage is derived server-side at read time and is not stored in the table. Active `open` and `in_progress` requests receive a computed score, level, badges, and factor explanation using category urgency, age, SLA target, and simple duplicate heuristics. The existing `priority` field remains a manual staff override; `urgent` pins a request above computed triage order.
+
+The staff "Most Urgent" queue ranks the filtered active set before pagination. Duplicate-volume scoring uses a single-pass map keyed by category and normalized address line, avoiding per-request scans.
+
+## Rate Limits
+
+Expected table after running `supabase/migrations/20260529113000_durable_rate_limits.sql`: `public.rate_limits`
+
+Important fields:
+
+- `key`: endpoint bucket and client IP
+- `count`: requests within the current window
+- `window_start`: start timestamp for the active rate-limit window
+
+The migration also creates `public.check_rate_limit(p_key, p_limit, p_window_seconds)`, used by server APIs with the service role. The table has RLS enabled and no public policies; clients do not read it directly.
 
 ## Request Photos
 

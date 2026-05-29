@@ -1,5 +1,12 @@
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const rateLimitBuckets = new Map();
+import { randomInt } from "node:crypto";
+import { TRACKING_CONFIG } from "../config/borough.js";
+import { getServiceSupabaseClient } from "./_audit.js";
+
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+export const TRACKING_ALPHABET = TRACKING_CONFIG.alphabet;
+export const TRACKING_EXAMPLE = TRACKING_CONFIG.example;
+const LEGACY_TRACKING_REGEX = /^MGN-\d{4}$/;
+const NEW_TRACKING_REGEX = new RegExp(`^MGN-[${TRACKING_ALPHABET}]{${TRACKING_CONFIG.generatedLength}}$`);
 
 export const REQUEST_STATUS = ["open", "in_progress", "resolved", "closed"];
 export const REQUEST_CATEGORIES = [
@@ -94,11 +101,42 @@ export function normalizeTrackingNumber(value) {
   const clean = String(value || "").trim().toUpperCase();
   const withPrefix = clean && !clean.startsWith("MGN-") ? `MGN-${clean}` : clean;
 
-  if (!/^MGN-\d{4}$/.test(withPrefix)) {
+  if (!LEGACY_TRACKING_REGEX.test(withPrefix) && !NEW_TRACKING_REGEX.test(withPrefix)) {
     return "";
   }
 
   return withPrefix;
+}
+
+export function generateTrackingNumber() {
+  let suffix = "";
+
+  for (let index = 0; index < TRACKING_CONFIG.generatedLength; index += 1) {
+    suffix += TRACKING_ALPHABET[randomInt(TRACKING_ALPHABET.length)];
+  }
+
+  return `MGN-${suffix}`;
+}
+
+export async function createUniqueTrackingNumber(supabase, table) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const trackingNumber = generateTrackingNumber();
+    const { data, error } = await supabase
+      .from(table)
+      .select("tracking_number")
+      .eq("tracking_number", trackingNumber)
+      .limit(1);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return trackingNumber;
+    }
+  }
+
+  throw new Error("Unable to generate a unique tracking number.");
 }
 
 export function getQueryParam(req, name) {
@@ -127,22 +165,37 @@ export function getClientIp(req) {
   return String(value || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
 }
 
-export function checkRateLimit(req, key, limit) {
-  const now = Date.now();
+export async function checkRateLimit(req, key, limit, windowSeconds = RATE_LIMIT_WINDOW_SECONDS) {
   const bucketKey = `${key}:${getClientIp(req)}`;
-  const bucket = rateLimitBuckets.get(bucketKey);
 
-  if (!bucket || bucket.expiresAt <= now) {
-    rateLimitBuckets.set(bucketKey, { count: 1, expiresAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true };
+  try {
+    const { data, error } = await getServiceSupabaseClient().rpc("check_rate_limit", {
+      p_key: bucketKey,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    if (!result) {
+      return { allowed: true };
+    }
+
+    return {
+      allowed: Boolean(result.allowed),
+      retryAfterSeconds: Number(result.retry_after_seconds) || windowSeconds,
+    };
+  } catch (error) {
+    console.warn("[rate-limit] Durable limiter unavailable; failing open.", {
+      key,
+      message: error instanceof Error ? error.message : "Unknown rate limit error.",
+    });
+    return { allowed: true, failedOpen: true };
   }
-
-  bucket.count += 1;
-
-  return {
-    allowed: bucket.count <= limit,
-    retryAfterSeconds: Math.ceil((bucket.expiresAt - now) / 1000),
-  };
 }
 
 export function rejectRateLimited(res, rateLimit) {

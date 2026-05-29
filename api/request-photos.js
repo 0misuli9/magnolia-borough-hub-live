@@ -1,5 +1,5 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
-import { getMethodNotAllowed, sendJson } from "./_http.js";
+import { getMethodNotAllowed, normalizeTrackingNumber, sendJson } from "./_http.js";
 import { randomUUID } from "crypto";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
@@ -136,10 +136,10 @@ export default async function handler(req, res) {
     }
 
     const requestId = body.request_id;
-    const trackingNumber = String(body.tracking_number || "").trim().toUpperCase();
+    const trackingNumber = normalizeTrackingNumber(body.tracking_number);
     const photos = Array.isArray(body.photos) ? body.photos : [];
 
-    if (!requestId || !/^MGN-\d{4}$/.test(trackingNumber)) {
+    if (!requestId || !trackingNumber) {
       return sendJson(res, 400, {
         success: false,
         error: "REQUEST_REQUIRED",

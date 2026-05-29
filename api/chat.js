@@ -1,9 +1,8 @@
 import { buildDynamicKnowledgePrompt, fetchRelevantKnowledgeFacts } from "./_knowledge.js";
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
+import { createRequestRecord, normalizePublicRequestRecord } from "./_requests-core.js";
 import {
   checkRateLimit,
-  clampText,
-  normalizeCategory,
   normalizeBody,
   rejectRateLimited,
   sendJson,
@@ -174,119 +173,26 @@ function parseSubmitRequest(reply) {
   }
 }
 
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const table = process.env.SUPABASE_REQUESTS_TABLE || "requests";
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return { url, key, table };
-}
-
-async function readResponse(response) {
-  const rawText = await response.text();
-
-  if (!rawText) {
-    return { parsed: null, rawText: "" };
-  }
-
-  try {
-    return { parsed: JSON.parse(rawText), rawText };
-  } catch {
-    return { parsed: null, rawText };
-  }
-}
-
-async function supabaseRequest(config, path, options = {}) {
-  const response = await fetch(`${config.url}/rest/v1/${config.table}${path}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
-      "Content-Type": "application/json",
-      Prefer: options.prefer || "return=representation",
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const { parsed, rawText } = await readResponse(response);
-
-  if (!response.ok) {
-    throw {
-      status: response.status,
-      details: parsed || rawText || "Supabase request failed.",
-    };
-  }
-
-  return parsed;
-}
-
-async function trackingNumberExists(config, trackingNumber) {
-  const encodedTrackingNumber = encodeURIComponent(trackingNumber);
-  const records = await supabaseRequest(
-    config,
-    `?select=tracking_number&tracking_number=eq.${encodedTrackingNumber}&limit=1`,
-    { method: "GET", prefer: "return=minimal" },
-  );
-
-  return Array.isArray(records) && records.length > 0;
-}
-
-function generateTrackingNumber() {
-  return `MGN-${Math.floor(Math.random() * 9000) + 1000}`;
-}
-
-async function createUniqueTrackingNumber(config) {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const trackingNumber = generateTrackingNumber();
-    console.log("[api/chat] Generated tracking number candidate", { trackingNumber, attempt });
-    const exists = await trackingNumberExists(config, trackingNumber);
-
-    if (!exists) {
-      console.log("[api/chat] Tracking number available", { trackingNumber });
-      return trackingNumber;
-    }
-  }
-
-  throw new Error("Unable to generate a unique tracking number.");
-}
-
 async function createServiceRequest(requestData) {
-  const config = getSupabaseConfig();
-
-  if (!config) {
-    throw new Error("Supabase environment variables are missing.");
-  }
-
-  const trackingNumber = await createUniqueTrackingNumber(config);
   const insertPayload = {
-    tracking_number: trackingNumber,
-    title: clampText(requestData.title, 120) || "Resident service request",
-    description: clampText(requestData.description || requestData.desc, 2000),
-    category: normalizeCategory(requestData.category || requestData.cat),
-    address: clampText(requestData.address || requestData.addr, 200),
-    status: "open",
+    title: requestData.title || "Resident service request",
+    description: requestData.description || requestData.desc,
+    category: requestData.category || requestData.cat,
+    address: requestData.address || requestData.addr,
     source: "chat",
-    created_at: new Date().toISOString(),
   };
 
   console.log("[api/chat] Creating chat service request", {
-    trackingNumber,
     category: insertPayload.category,
     hasAddress: Boolean(insertPayload.address),
-    descriptionLength: insertPayload.description.length,
+    descriptionLength: String(insertPayload.description || "").length,
   });
 
-  const createdRecords = await supabaseRequest(config, "", {
-    method: "POST",
+  return createRequestRecord({
+    supabase: getServiceSupabaseClient(),
     body: insertPayload,
-    prefer: "return=representation",
+    source: "chat",
   });
-
-  return Array.isArray(createdRecords) ? createdRecords[0] : createdRecords;
 }
 
 async function writeAuditEvent(eventType, recordId, metadata = {}) {
@@ -317,7 +223,7 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "Method not allowed. Use POST." });
   }
 
-  const rateLimit = checkRateLimit(req, "chat", 20);
+  const rateLimit = await checkRateLimit(req, "chat", 20);
   if (!rateLimit.allowed) {
     return rejectRateLimited(res, rateLimit);
   }
@@ -506,8 +412,10 @@ export default async function handler(req, res) {
     });
     try {
       createdRequest = await createServiceRequest(requestData);
-      if (/MGN-\d{4}/.test(reply)) {
-        reply = reply.replace(/MGN-\d{4}/g, createdRequest.tracking_number);
+      const trackingPattern = /MGN-(?:\d{4}|[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8})/g;
+      if (trackingPattern.test(reply)) {
+        trackingPattern.lastIndex = 0;
+        reply = reply.replace(trackingPattern, createdRequest.tracking_number);
       } else {
         reply = `${reply}\n\nYour tracking number is ${createdRequest.tracking_number}. You can check the status anytime in the Service Requests tab.`;
       }
@@ -540,6 +448,6 @@ export default async function handler(req, res) {
     reply,
     requestData,
     responseId: typeof responseJson.id === "string" ? responseJson.id : null,
-    createdRequest,
+    createdRequest: createdRequest ? normalizePublicRequestRecord(createdRequest, { includeId: true }) : null,
   });
 }

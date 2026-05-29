@@ -28,3 +28,10 @@ export const TRIAGE_CONFIG = {
     needsReviewDays: 2,
   },
 };
+
+export const TRACKING_CONFIG = {
+  alphabet: "23456789ABCDEFGHJKMNPQRSTUVWXYZ",
+  generatedLength: 8,
+  example: "MGN-7K9Q2M8P",
+  legacyPattern: "MGN-####",
+};

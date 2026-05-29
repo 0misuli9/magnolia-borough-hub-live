@@ -14,12 +14,14 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 - Browser sends staff Supabase access tokens to protected APIs with `Authorization: Bearer <token>`.
 - Serverless APIs verify staff role with `api/_staff-auth.js`.
 - Serverless APIs query Supabase with `SUPABASE_SERVICE_ROLE_KEY` and return sanitized JSON.
-- Public request lookup uses `/api/requests?tracking_number=MGN-####`.
+- Public request lookup uses `/api/requests?tracking_number=MGN-7K9Q2M8P`. Existing legacy `MGN-####` tracking numbers remain valid.
 - Announcements and requests persist in Supabase, not browser-local arrays.
 - Chat-created requests are persisted by `api/chat.js` with server-generated tracking numbers.
 - Resident status lookup returns a server-backed request summary and status timeline.
 - `BOROUGH_CONFIG` in `index.html` centralizes Magnolia-specific identity, contact placeholders, service categories, department directory content, calendar notes, and forms/public-records resources as groundwork for future municipality templates. Server-side triage tuning lives in `config/borough.js`.
 - Staff request queues include server-derived triage scoring so active requests sort by urgency, with manual `urgent` priority pinning above computed score.
+- New request tracking numbers are crypto-random, non-enumerable codes using an unambiguous alphabet. Public lookup returns status-oriented request summaries and does not expose resident addresses or staff-only fields.
+- Triage ranking is computed across the filtered active request set before pagination, with an O(n) duplicate index for similar reports.
 - The resident report form supports up to 3 staff-visible photos. Browser code resizes raster images before upload; the server stores them in a private Supabase Storage bucket and returns signed URLs only to staff detail views.
 - Staff can open a request detail drawer to review triage factors, photos, resident details, staff controls, internal notes, and an audit-backed timeline.
 - Staff audit activity is displayed as human-readable events. Chat volume is counted as a metric; individual chat-turn audit rows are not shown in the staff activity table.
@@ -92,6 +94,8 @@ Open the local URL printed by Vercel, usually `http://localhost:3000`.
 Run the migration in `supabase/migrations/20260528120000_municipal_operations_hardening.sql` in the Supabase SQL editor. It adds operational columns, status normalization, RLS policies, indexes, and knowledge-base fields.
 
 Run `supabase/migrations/20260529103000_request_photos.sql` before enabling photo uploads. It creates `public.request_photos`, enables RLS, and creates or verifies the private `request-photos` Storage bucket. The migration detects the `public.requests.id` type at runtime so the photo foreign key matches the deployed table.
+
+Run `supabase/migrations/20260529113000_durable_rate_limits.sql` before relying on production rate limiting. It adds `public.rate_limits` and a `public.check_rate_limit` RPC used by chat, public lookup, and public request creation. This table-backed limiter is suitable for controlled borough volume; a larger multi-municipality rollout should move the limiter to a dedicated KV/edge service.
 
 Required tables:
 

@@ -1,6 +1,12 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
 import { getAuthenticatedStaff, requireStaff } from "./_staff-auth.js";
-import { computeRequestTriage } from "./_triage.js";
+import { buildTriageContext } from "./_triage.js";
+import {
+  createRequestRecord,
+  normalizePublicRequestRecord,
+  normalizeRequestRecord,
+  REQUESTS_TABLE,
+} from "./_requests-core.js";
 import {
   checkRateLimit,
   clampText,
@@ -15,51 +21,7 @@ import {
   sendJson,
 } from "./_http.js";
 
-const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 const PHOTOS_TABLE = "request_photos";
-
-function normalizeRequestRecord(record, allRecords = []) {
-  if (!record) {
-    return null;
-  }
-
-  const triage = computeRequestTriage(record, allRecords);
-
-  return {
-    id: record.id || null,
-    tracking_number: record.tracking_number || null,
-    title: record.title || "",
-    description: record.description || "",
-    category: normalizeCategory(record.category),
-    address: record.address || "",
-    status: normalizeStatus(record.status),
-    priority: record.priority || "normal",
-    assigned_to: record.assigned_to || null,
-    internal_notes: record.internal_notes || "",
-    source: record.source || "public",
-    created_at: record.created_at || null,
-    updated_at: record.updated_at || null,
-    triage,
-  };
-}
-
-function normalizePublicRequestRecord(record, options = {}) {
-  const normalized = normalizeRequestRecord(record, [record]);
-
-  if (!normalized) {
-    return null;
-  }
-
-  if (!options.includeId) {
-    delete normalized.id;
-  }
-  delete normalized.internal_notes;
-  delete normalized.assigned_to;
-  delete normalized.priority;
-  delete normalized.triage;
-
-  return normalized;
-}
 
 function safeRequestShape(body) {
   if (!body || typeof body !== "object") {
@@ -72,44 +34,6 @@ function safeRequestShape(body) {
     category: String(body.category || body.cat || "").trim() || null,
     status: String(body.status || "").trim() || null,
     hasAddress: Boolean(String(body.address || body.addr || "").trim()),
-  };
-}
-
-function generateTrackingNumber() {
-  return `MGN-${Math.floor(Math.random() * 9000) + 1000}`;
-}
-
-async function createUniqueTrackingNumber(supabase) {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const trackingNumber = generateTrackingNumber();
-    const { data, error } = await supabase
-      .from(REQUESTS_TABLE)
-      .select("tracking_number")
-      .eq("tracking_number", trackingNumber)
-      .limit(1);
-
-    if (error) {
-      throw error;
-    }
-
-    if (!Array.isArray(data) || data.length === 0) {
-      return trackingNumber;
-    }
-  }
-
-  throw new Error("Unable to generate a unique tracking number.");
-}
-
-function buildRequestRecord(body, trackingNumber, source, canSetStatus = false) {
-  return {
-    tracking_number: trackingNumber,
-    title: clampText(body.title, 120),
-    description: clampText(body.description || body.desc, 2000),
-    category: normalizeCategory(body.category || body.cat),
-    address: clampText(body.address || body.addr, 200),
-    status: canSetStatus ? normalizeStatus(body.status) : "open",
-    created_at: new Date().toISOString(),
-    source,
   };
 }
 
@@ -172,7 +96,7 @@ async function writeAudit(eventType, actorId, recordId, metadata = {}) {
 }
 
 async function handleLookup(req, res, trackingNumber) {
-  const rateLimit = checkRateLimit(req, "requests:lookup", 30);
+  const rateLimit = await checkRateLimit(req, "requests:lookup", 30);
   if (!rateLimit.allowed) {
     return rejectRateLimited(res, rateLimit);
   }
@@ -258,11 +182,11 @@ async function handleStaffDetail(req, res, rawRequest, staff) {
     .from(REQUESTS_TABLE)
     .select("id,tracking_number,category,address,status,created_at,updated_at,priority")
     .in("status", ["open", "in_progress"])
-    .limit(250);
+    .limit(1000);
   const activeRecords = activeRecordsResult.error || !Array.isArray(activeRecordsResult.data)
     ? [rawRequest]
     : activeRecordsResult.data;
-  const request = normalizeRequestRecord(rawRequest, activeRecords);
+  const request = normalizeRequestRecord(rawRequest, buildTriageContext(activeRecords));
 
   const [photoResult, auditResult] = await Promise.all([
     supabase
@@ -322,6 +246,17 @@ async function handleStaffList(req, res) {
   const order = sort === "oldest" ? "created_at" : "created_at";
   const ascending = sort === "oldest";
 
+  if (sort === "urgent" && (!status || ["open", "in_progress"].includes(status))) {
+    return handleStaffUrgentList(req, res, {
+      supabase,
+      limit,
+      offset,
+      status,
+      category,
+      search,
+    });
+  }
+
   let query = supabase
     .from(REQUESTS_TABLE)
     .select("*", { count: "exact" })
@@ -349,7 +284,8 @@ async function handleStaffList(req, res) {
     throw error;
   }
 
-  const normalizedRequests = (Array.isArray(data) ? data : []).map((record) => normalizeRequestRecord(record, data));
+  const triageContext = buildTriageContext(Array.isArray(data) ? data : []);
+  const normalizedRequests = (Array.isArray(data) ? data : []).map((record) => normalizeRequestRecord(record, triageContext));
   const sortedRequests = normalizedRequests.sort((left, right) => {
     if (sort === "newest") {
       return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
@@ -375,8 +311,66 @@ async function handleStaffList(req, res) {
   });
 }
 
+async function handleStaffUrgentList(req, res, { supabase, limit, offset, status, category, search }) {
+  const rankCap = 1000;
+  let query = supabase
+    .from(REQUESTS_TABLE)
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .limit(rankCap);
+
+  if (status) {
+    query = query.eq("status", status);
+  } else {
+    query = query.in("status", ["open", "in_progress"]);
+  }
+
+  if (category) {
+    query = query.eq("category", normalizeCategory(category));
+  }
+
+  if (search) {
+    const escaped = search.replace(/[%_]/g, "\\$&");
+    query = query.or(
+      `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
+    );
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  const records = Array.isArray(data) ? data : [];
+  const triageContext = buildTriageContext(records);
+  const sortedRequests = records
+    .map((record) => normalizeRequestRecord(record, triageContext))
+    .sort((left, right) => {
+      const leftUrgent = String(left.priority || "").toLowerCase() === "urgent";
+      const rightUrgent = String(right.priority || "").toLowerCase() === "urgent";
+      const priorityDelta = Number(rightUrgent) - Number(leftUrgent);
+      if (priorityDelta !== 0) return priorityDelta;
+
+      const scoreDelta = (right.triage?.score || 0) - (left.triage?.score || 0);
+      if (scoreDelta !== 0) return scoreDelta;
+
+      return new Date(left.created_at || 0).getTime() - new Date(right.created_at || 0).getTime();
+    });
+
+  return sendJson(res, 200, {
+    success: true,
+    requests: sortedRequests.slice(offset, offset + limit),
+    count: count || sortedRequests.length,
+    limit,
+    offset,
+    rank_cap: rankCap,
+    rank_cap_applied: (count || sortedRequests.length) > rankCap,
+  });
+}
+
 async function handleCreate(req, res) {
-  const rateLimit = checkRateLimit(req, "requests:create", 12);
+  const rateLimit = await checkRateLimit(req, "requests:create", 12);
   if (!rateLimit.allowed) {
     return rejectRateLimited(res, rateLimit);
   }
@@ -391,46 +385,24 @@ async function handleCreate(req, res) {
     });
   }
 
-  if (!clampText(body.title, 120)) {
-    return sendJson(res, 400, {
-      success: false,
-      error: "TITLE_REQUIRED",
-      message: "A request title is required.",
-    });
-  }
-
-  if (!clampText(body.description || body.desc, 2000)) {
-    return sendJson(res, 400, {
-      success: false,
-      error: "DESCRIPTION_REQUIRED",
-      message: "A request description is required.",
-    });
-  }
-
   const supabase = getServiceSupabaseClient();
   const staff = await getAuthenticatedStaff(req);
-  const trackingNumber = normalizeTrackingNumber(body.tracking_number) || await createUniqueTrackingNumber(supabase);
   const source = staff.authenticated ? "staff" : "public";
-  const insertPayload = buildRequestRecord(body, trackingNumber, source, staff.authenticated);
 
   console.log("[api/requests] Creating request", {
-    source: insertPayload.source,
-    category: insertPayload.category,
-    status: insertPayload.status,
-    hasAddress: Boolean(insertPayload.address),
+    source,
+    category: normalizeCategory(body.category || body.cat),
+    status: staff.authenticated ? normalizeStatus(body.status) : "open",
+    hasAddress: Boolean(clampText(body.address || body.addr, 200)),
   });
 
-  const { data, error } = await supabase
-    .from(REQUESTS_TABLE)
-    .insert(insertPayload)
-    .select("*")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  const createdRequest = normalizeRequestRecord(data);
+  const createdRequest = await createRequestRecord({
+    supabase,
+    body,
+    source,
+    canSetStatus: staff.authenticated,
+    requestedTrackingNumber: body.tracking_number,
+  });
   await writeAudit("request_created", staff.authenticated ? staff.user.id : null, createdRequest.tracking_number, {
     source: createdRequest.source,
     category: createdRequest.category,
@@ -440,7 +412,7 @@ async function handleCreate(req, res) {
 
   return sendJson(res, 201, {
     success: true,
-    request: staff.authenticated ? createdRequest : normalizePublicRequestRecord(data, { includeId: true }),
+    request: staff.authenticated ? createdRequest : normalizePublicRequestRecord(createdRequest, { includeId: true }),
   });
 }
 
@@ -548,7 +520,7 @@ export default async function handler(req, res) {
           return sendJson(res, 400, {
             success: false,
             error: "INVALID_TRACKING_NUMBER",
-            message: "Use a tracking number like MGN-1234.",
+            message: "Use a tracking number like MGN-7K9Q2M8P or an existing legacy code.",
           });
         }
         return handleLookup(req, res, trackingNumber);

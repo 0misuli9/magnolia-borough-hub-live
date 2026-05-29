@@ -31,6 +31,7 @@ rg -n "OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|ADMIN_SECRET|x-admin-secret" ind
 rg -n "requests\.find|localStorage|sessionStorage" index.html api
 rg -n "/api/requests|/api/announcements|/api/dashboard" index.html api
 rg -n "image/svg|image/jpeg|image/png|image/webp|request-photos" index.html api supabase
+rg -n "Math\.random|MGN-\\\\d\\{4\\}" api index.html
 ```
 
 ## Manual Smoke Tests
@@ -92,6 +93,16 @@ Expected: chat turns are counted in metrics, not listed as repetitive audit rows
 
 Expected: request appears from the Supabase-backed API.
 
+### Test 1A - Public Tracking Privacy
+
+1. Submit a new resident request.
+2. Confirm the tracking number uses the long `MGN-7K9Q2M8P` style format.
+3. Lookup the request publicly.
+4. Lookup an existing legacy `MGN-####` record if one is available.
+5. Inspect the network response.
+
+Expected: new and legacy numbers both work, the lookup input accepts the long code, and the public response does not include address, description, internal notes, assignment, priority, photo paths, or signed URLs.
+
 ### Test 2 - Announcement Persistence
 
 1. Sign in as staff.
@@ -103,6 +114,15 @@ Expected: request appears from the Supabase-backed API.
 7. Open resident announcements in another browser.
 
 Expected: announcement appears there too.
+
+### Test 2A - Announcement Scheduling Window
+
+1. As staff, create or update one active announcement with a future `starts_at`.
+2. Create or update one active announcement with a past `ends_at`.
+3. Load public announcements.
+4. Load staff announcements.
+
+Expected: public view hides future and expired records; staff can still see/manage them.
 
 ### Test 3 - Staff Navigation
 
@@ -130,13 +150,24 @@ Expected: metrics and audit logs update.
 ### Test 4A - Triage Queue
 
 1. Sign in as staff.
-2. Create or seed active requests in safety-relevant and lower-risk categories.
+2. Create or seed more than 100 active requests, including one older high-urgency item.
 3. Open Service Requests with sort set to Most Urgent.
 4. Confirm manual `urgent` priority appears first.
 5. Confirm remaining active requests sort by triage score.
-6. Confirm triage level, score, aging badges, and factor summary render with text labels.
+6. Confirm duplicate count reflects similar reports across the active set, not only the visible page.
+7. Confirm triage level, score, aging badges, and factor summary render with text labels.
 
 Expected: the staff queue explains why a request is ranked and does not rely on color alone.
+
+### Test 4D - Durable Rate Limiting
+
+1. Run the durable rate-limit migration.
+2. Rapidly call public tracking lookup from the same IP.
+3. Rapidly call chat from the same IP.
+4. Rapidly create public requests from the same IP.
+5. Wait for the window to reset and retry.
+
+Expected: repeated calls consistently return `429` within the window across serverless invocations, then reset after the window. If the limiter store is unavailable, the APIs fail open and log a warning.
 
 ### Test 4B - Resident Photo Upload
 

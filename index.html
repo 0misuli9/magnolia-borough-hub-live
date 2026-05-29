@@ -551,7 +551,7 @@
   <div class="panel" id="requests">
     <div class="lookup-bar">
       <label for="lookupInput">🔍 Check Request Status:</label>
-      <input class="lookup-input" id="lookupInput" placeholder="Enter tracking number e.g. MGN-1234" maxlength="8"/>
+      <input class="lookup-input" id="lookupInput" placeholder="Enter tracking number e.g. MGN-7K9Q2M8P" maxlength="16"/>
       <button class="lookup-btn" id="lookupBtn" type="button">Check Status</button>
       <div class="lookup-result" id="lookupResult" aria-live="polite"></div>
     </div>
@@ -949,14 +949,12 @@ async function lookupTicket(){
     autoAddRequest(data.request);
     var ticket=normalizeCreatedRequestRecord(data.request);
     const s=statusLabel(ticket.status);
-    var location=data.request.address||data.request.location||'Not provided';
     var updated=data.request.updated_at?formatRequestDate(data.request.updated_at):'Not available';
     result.className='lookup-result found';
     result.innerHTML='<div class="lookup-result-title">Request '+escapeHtml(ticket.id)+'</div>'+
       '<strong>Issue:</strong> '+escapeHtml(ticket.title)+'<br/>'+
       '<strong>Status:</strong> '+escapeHtml(s)+' - '+escapeHtml(statusExplanation(ticket.status))+'<br/>'+
       '<strong>Category:</strong> '+escapeHtml(ticket.cat)+'<br/>'+
-      '<strong>Location:</strong> '+escapeHtml(location)+'<br/>'+
       '<strong>Submitted:</strong> '+escapeHtml(ticket.date)+'<br/>'+
       '<strong>Last updated:</strong> '+escapeHtml(updated)+
       statusTimelineHtml(ticket.status);
@@ -1435,7 +1433,7 @@ function humanizeAuditEvent(eventType){
 function formatAuditRecord(row){
   var eventType=String(row.event_type||'');
   var record=String(row.related_record_id||'').trim();
-  if(/^MGN-\d{4}$/i.test(record))return record.toUpperCase();
+  if(/^MGN-(?:\d{4}|[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8})$/i.test(record))return record.toUpperCase();
   if(eventType.indexOf('announcement_')===0)return 'Announcement';
   if(eventType.indexOf('knowledge_')===0)return 'Knowledge base';
   if(eventType==='staff_sign_in')return 'Staff account';
@@ -2250,8 +2248,10 @@ async function sendMessage(){
       if(data.createdRequest){
         var newId=autoAddRequest(data.createdRequest);
         if(newId){
-          if(/MGN-\d{4}/.test(reply)){
-            reply=reply.replace(/MGN-\d{4}/g,newId);
+          var trackingPattern=/MGN-(?:\d{4}|[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8})/g;
+          if(trackingPattern.test(reply)){
+            trackingPattern.lastIndex=0;
+            reply=reply.replace(trackingPattern,newId);
           }else{
             reply=reply+'\n\nYour tracking number is '+newId+'. You can check the status anytime in the Service Requests tab.';
           }

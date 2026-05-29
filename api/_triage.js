@@ -21,7 +21,7 @@ function urgencyTier(categoryScore) {
   return "low";
 }
 
-function normalizeAddressKey(value) {
+export function normalizeAddressKey(value) {
   return String(value || "")
     .toLowerCase()
     .split(",")[0]
@@ -31,23 +31,56 @@ function normalizeAddressKey(value) {
     .trim();
 }
 
-function countSimilarActiveRequests(record, allRecords) {
+function duplicateKey(record) {
   const category = normalizeCategory(record.category);
   const addressKey = normalizeAddressKey(record.address);
 
   if (!category || !addressKey) {
+    return "";
+  }
+
+  return `${category}|${addressKey}`;
+}
+
+export function buildTriageContext(records = []) {
+  const duplicateCounts = new Map();
+
+  for (const record of records) {
+    if (!["open", "in_progress"].includes(normalizeStatus(record.status))) {
+      continue;
+    }
+
+    const key = duplicateKey(record);
+    if (key) {
+      duplicateCounts.set(key, (duplicateCounts.get(key) || 0) + 1);
+    }
+  }
+
+  return {
+    duplicateCounts,
+  };
+}
+
+function resolveTriageContext(contextOrRecords) {
+  if (contextOrRecords && contextOrRecords.duplicateCounts instanceof Map) {
+    return contextOrRecords;
+  }
+
+  return buildTriageContext(Array.isArray(contextOrRecords) ? contextOrRecords : []);
+}
+
+function countSimilarActiveRequests(record, contextOrRecords) {
+  const key = duplicateKey(record);
+
+  if (!key) {
     return 0;
   }
 
-  return allRecords.filter((candidate) => {
-    if (candidate === record) return false;
-    if (!["open", "in_progress"].includes(normalizeStatus(candidate.status))) return false;
-    if (normalizeCategory(candidate.category) !== category) return false;
-    return normalizeAddressKey(candidate.address) === addressKey;
-  }).length;
+  const context = resolveTriageContext(contextOrRecords);
+  return Math.max(0, (context.duplicateCounts.get(key) || 0) - 1);
 }
 
-export function computeRequestTriage(record, allRecords = []) {
+export function computeRequestTriage(record, contextOrRecords = []) {
   const status = normalizeStatus(record.status);
 
   if (!["open", "in_progress"].includes(status)) {
@@ -67,7 +100,7 @@ export function computeRequestTriage(record, allRecords = []) {
   const tier = urgencyTier(categoryUrgency);
   const slaTargetDays = TRIAGE_CONFIG.slaTargetDays[tier] || TRIAGE_CONFIG.slaTargetDays.medium;
   const slaBreached = ageDays > slaTargetDays;
-  const similarCount = countSimilarActiveRequests(record, allRecords);
+  const similarCount = countSimilarActiveRequests(record, contextOrRecords);
   const duplicateScore = Math.min(15, similarCount * 5);
   const score = clampScore(categoryScore + ageScore + (slaBreached ? 20 : 0) + duplicateScore);
   const level =

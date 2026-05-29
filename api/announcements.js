@@ -12,6 +12,26 @@ import {
 
 const ANNOUNCEMENTS_TABLE = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
 
+function isPublicAnnouncementVisible(record, now = new Date()) {
+  const status = normalizeAnnouncementStatus(record.status);
+  const startsAt = record.starts_at ? new Date(record.starts_at) : null;
+  const endsAt = record.ends_at ? new Date(record.ends_at) : null;
+
+  if (status !== "active") {
+    return false;
+  }
+
+  if (startsAt && Number.isFinite(startsAt.getTime()) && startsAt > now) {
+    return false;
+  }
+
+  if (endsAt && Number.isFinite(endsAt.getTime()) && endsAt < now) {
+    return false;
+  }
+
+  return true;
+}
+
 function normalizeAnnouncementRecord(record) {
   if (!record) {
     return null;
@@ -134,7 +154,9 @@ async function handleGet(req, res) {
 
   return sendJson(res, 200, {
     success: true,
-    announcements: (Array.isArray(data) ? data : []).map(normalizeAnnouncementRecord),
+    announcements: (Array.isArray(data) ? data : [])
+      .filter((record) => staffMode || isPublicAnnouncementVisible(record))
+      .map(normalizeAnnouncementRecord),
   });
 }
 

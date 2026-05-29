@@ -15,6 +15,7 @@
 - Keep `OPENAI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` backend-only.
 - Run `supabase/migrations/20260528120000_municipal_operations_hardening.sql` in Supabase.
 - Run `supabase/migrations/20260529103000_request_photos.sql` in Supabase before enabling resident photo uploads. Confirm the `request-photos` Storage bucket is private.
+- Run `supabase/migrations/20260529113000_durable_rate_limits.sql` in Supabase before relying on production rate limiting.
 - Create or verify Supabase Auth staff users with staff role metadata.
 - Verify RLS policies are present.
 - Confirm staff accounts are individual whenever possible; shared testing accounts reduce audit value.
@@ -54,6 +55,9 @@ git push origin main
 - Confirm browser network payloads do not include backend-only secrets.
 - Test resident mobile at 360px and 390px: task cards route correctly, chat is readable, inputs do not zoom, and there is no horizontal whitespace.
 - Confirm public tracking lookup shows the status timeline and does not expose internal notes.
+- Confirm public tracking lookup accepts new long tracking codes and legacy 4-digit codes, and does not expose resident addresses.
+- Confirm public announcements hide future `starts_at` and past `ends_at` records while staff can still manage them.
+- Confirm rapid public lookup/chat/request-create calls receive durable `429` responses after the configured threshold.
 - Confirm resident landing has no duplicate hero/stat/card navigation: hero only starts the card layer, stats are informational, and cards route to distinct sections.
 - Confirm Staff Dashboard audit rows use plain-English event names and do not show raw response IDs or raw JSON metadata.
 - Submit a resident report with photos and confirm photos do not appear in public tracking lookup.

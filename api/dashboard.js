@@ -1,7 +1,7 @@
 import { getServiceSupabaseClient } from "./_audit.js";
 import { requireStaff } from "./_staff-auth.js";
 import { getMethodNotAllowed, normalizeCategory, normalizeStatus, sendJson } from "./_http.js";
-import { computeRequestTriage } from "./_triage.js";
+import { buildTriageContext, computeRequestTriage } from "./_triage.js";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 const ANNOUNCEMENTS_TABLE = process.env.SUPABASE_ANNOUNCEMENTS_TABLE || "announcements";
@@ -46,9 +46,30 @@ function normalizeAnnouncement(record) {
     title: record.title || "",
     body: record.body || "",
     status: record.status || "active",
+    starts_at: record.starts_at || null,
+    ends_at: record.ends_at || null,
     created_at: record.created_at || null,
     updated_at: record.updated_at || null,
   };
+}
+
+function isResidentVisibleAnnouncement(announcement, now = new Date()) {
+  const startsAt = announcement.starts_at ? new Date(announcement.starts_at) : null;
+  const endsAt = announcement.ends_at ? new Date(announcement.ends_at) : null;
+
+  if (announcement.status !== "active") {
+    return false;
+  }
+
+  if (startsAt && Number.isFinite(startsAt.getTime()) && startsAt > now) {
+    return false;
+  }
+
+  if (endsAt && Number.isFinite(endsAt.getTime()) && endsAt < now) {
+    return false;
+  }
+
+  return true;
 }
 
 function getTopCategory(requests) {
@@ -80,8 +101,9 @@ function countResolvedSince(requests, days) {
 }
 
 function countNeedsAttention(requests) {
+  const triageContext = buildTriageContext(requests);
   return requests.filter((request) => {
-    const triage = computeRequestTriage(request, requests);
+    const triage = computeRequestTriage(request, triageContext);
     return triage.level === "High" || triage.badges.includes("Overdue");
   }).length;
 }
@@ -109,7 +131,7 @@ export default async function handler(req, res) {
         .from(REQUESTS_TABLE)
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(250),
+        .limit(1000),
       supabase
         .from(ANNOUNCEMENTS_TABLE)
         .select("*")
@@ -135,7 +157,7 @@ export default async function handler(req, res) {
     const requests = (Array.isArray(requestsResult.data) ? requestsResult.data : []).map(normalizeRequest);
     const announcements = (Array.isArray(announcementsResult.data) ? announcementsResult.data : []).map(normalizeAnnouncement);
     const auditRows = Array.isArray(auditResult.data) ? auditResult.data : [];
-    const activeAnnouncements = announcements.filter((announcement) => announcement.status !== "archived");
+    const activeAnnouncements = announcements.filter((announcement) => isResidentVisibleAnnouncement(announcement));
 
     return sendJson(res, 200, {
       success: true,

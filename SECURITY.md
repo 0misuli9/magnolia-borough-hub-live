@@ -21,7 +21,7 @@ Important current-state note: the database migration also creates `public.staff_
 Staff-only APIs:
 
 - `GET /api/requests`
-- `GET /api/requests?tracking_number=MGN-####&staff=1`
+- `GET /api/requests?tracking_number=MGN-7K9Q2M8P&staff=1`
 - `PATCH /api/requests`
 - `GET /api/announcements?staff=1`
 - `POST/PATCH/DELETE /api/announcements`
@@ -30,7 +30,7 @@ Staff-only APIs:
 Public APIs:
 
 - `GET /api/announcements`
-- `GET /api/requests?tracking_number=MGN-####`
+- `GET /api/requests?tracking_number=MGN-7K9Q2M8P`
 - `POST /api/requests`
 - `POST /api/request-photos`
 - `POST /api/chat`
@@ -57,15 +57,17 @@ The frontend no longer uses inline `onclick`/`onkeydown` handlers. Dynamic chat 
 
 Staff audit display intentionally hides low-value plumbing. Raw OpenAI response IDs, debug-only metadata, and raw JSON should not be shown in the dashboard table. Chat turns may still be counted as an operational metric without exposing resident message content.
 
+Tracking numbers generated after this hardening pass use a crypto-random 8-character suffix from an unambiguous uppercase alphabet. Legacy `MGN-####` numbers remain accepted for residents who already received them. Public lookup must never return resident address, internal notes, assignment, manual priority, private photo storage paths, or signed photo URLs.
+
 Photo uploads are staff-visible only. The browser accepts JPEG, PNG, and WebP files, rejects SVG/non-raster files, and re-encodes images through canvas before upload to reduce size and strip EXIF/GPS metadata. The server accepts only resized JPEG data URLs, validates count and size, strips JPEG metadata again, and stores objects in the private `request-photos` Supabase Storage bucket. Staff access uses short-lived signed URLs from the server; public tracking lookup never returns photo URLs or internal notes.
 
 The current CSP still permits inline script/style because `index.html` contains an inline application script and inline CSS. A future strict-CSP pass should move frontend JavaScript and CSS into external files or add nonces/hashes, then remove `script-src 'unsafe-inline'`.
 
 ## Abuse Controls
 
-`api/_http.js` includes lightweight in-memory rate limiting for chat, request creation, and public tracking lookup. This is useful for basic protection on a warm serverless instance, but production should add durable edge or provider-level rate limiting.
+`api/_http.js` uses a Supabase-backed durable limiter for chat, request creation, and public tracking lookup through `public.check_rate_limit`. If the limiter store is unavailable, requests fail open and log a warning so legitimate residents are not blocked by an infrastructure issue.
 
-For Vercel serverless production, durable rate limiting should be added with Vercel KV, Upstash, or a Supabase-backed bucket table. In-memory buckets are not enough for a public municipal launch because serverless instances are stateless.
+The Supabase-table limiter adds one database round trip per limited call and is appropriate for controlled borough volume. A high-scale or multi-municipality deployment should move this control to a dedicated KV or edge rate-limiting service such as Vercel KV or Upstash.
 
 ## Privacy
 

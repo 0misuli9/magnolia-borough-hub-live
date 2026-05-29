@@ -7,6 +7,8 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 ## Architecture
 
 - Browser renders `index.html`.
+- Resident UX is task-first: Ask a Borough Question, Report a Problem, Check a Request, and See Borough Updates route residents into the correct workflow without requiring prompt-writing skill.
+- Mobile layout uses responsive task cards, dynamic viewport sizing for chat, 16px mobile form inputs, wrapped long records, and mobile-friendly staff audit cards.
 - Browser signs staff in with Supabase Auth using `/api/auth-config`.
 - Browser sends staff Supabase access tokens to protected APIs with `Authorization: Bearer <token>`.
 - Serverless APIs verify staff role with `api/_staff-auth.js`.
@@ -14,6 +16,8 @@ The root `index.html` is the production entry. The nested `magnolia-site/magnoli
 - Public request lookup uses `/api/requests?tracking_number=MGN-####`.
 - Announcements and requests persist in Supabase, not browser-local arrays.
 - Chat-created requests are persisted by `api/chat.js` with server-generated tracking numbers.
+- Resident status lookup returns a server-backed request summary and status timeline.
+- A small `BOROUGH_CONFIG` object in `index.html` centralizes the first Magnolia-specific contact/config values as groundwork for future municipality templates.
 
 ## Environment Variables
 
@@ -49,6 +53,24 @@ or:
 ```
 
 Allowed roles default to `staff`, `admin`, and `owner`. Set `STAFF_REQUIRE_MFA=true` to require Supabase MFA assurance level `aal2`.
+
+For controlled borough testing, use individual staff accounts where possible so audit logs are meaningful. The migration includes `staff_profiles`; a future hardening pass should make that table the single source of truth for staff role authorization after current staff rows are populated.
+
+## Public-Sector UX Notes
+
+- The interface is designed for controlled municipal review, not certified compliance.
+- Accessibility work includes skip-to-main-content, visible focus states, labeled form controls, live regions for chat/status/toasts, reduced-motion support, and keyboard-operable task cards/stats.
+- Final privacy, public-records, accessibility statement, and retention wording should be approved by the borough.
+
+## Future Multi-Municipality Path
+
+Do not fork the app per town. The intended path is:
+
+1. Move `BOROUGH_CONFIG` into a versioned config module or tenant table.
+2. Add `tenant_id` to operational tables.
+3. Add tenant-scoped RLS policies.
+4. Route by subdomain or path.
+5. Maintain a separate approved knowledge base per municipality.
 
 ## Local Development
 

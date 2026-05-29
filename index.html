@@ -12,8 +12,14 @@
     --white:#ffffff;--off-white:#f8faf9;--text:#1a2e1f;--text-mid:#4a6651;--text-light:#8aab92;
     --border:#c8e6d0;--red:#b91c1c;--shadow:0 2px 14px rgba(27,67,50,0.10);
   }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  *{margin:0;padding:0;box-sizing:border-box;min-width:0;}
+  html,body{max-width:100%;overflow-x:hidden;}
+  body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);min-height:100vh;}
+  button,input,select,textarea{font:inherit;}
+  button{touch-action:manipulation;}
+  :focus-visible{outline:3px solid var(--gold-bright);outline-offset:3px;}
+  .skip-link{position:absolute;left:12px;top:-48px;background:var(--gold-bright);color:var(--green-dark);font-weight:800;padding:10px 14px;border-radius:0 0 8px 8px;z-index:2000;text-decoration:none;}
+  .skip-link:focus{top:0;}
   .gold-stripe{height:5px;background:linear-gradient(90deg,var(--gold-bright),var(--gold),var(--gold-bright));}
   .header{background:linear-gradient(135deg,var(--green-dark) 0%,var(--green) 60%,var(--green-mid) 100%);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 3px 18px rgba(27,67,50,0.30);}
   .header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:68px;}
@@ -29,7 +35,7 @@
   .admin-btn.active{background:var(--gold-bright);color:var(--green-dark);}
   .gold-divider{height:4px;background:linear-gradient(90deg,var(--gold-bright),var(--gold),var(--gold-bright));}
   .nav-tabs{background:white;border-bottom:2px solid var(--border);padding:0 20px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
-  .nav-inner{max-width:960px;margin:0 auto;display:flex;}
+  .nav-inner{max-width:960px;margin:0 auto;display:flex;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}
   .tab{padding:13px 18px;background:transparent;border:none;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;display:flex;align-items:center;gap:6px;margin-bottom:-2px;white-space:nowrap;}
   .tab:hover{color:var(--green);background:var(--green-pale);}
   .tab.active{color:var(--green-dark);border-bottom-color:var(--gold-bright);font-weight:700;}
@@ -49,9 +55,19 @@
   .hero-btn-primary:hover{background:#f5d040;transform:translateY(-1px);}
   .hero-btn-secondary{background:rgba(255,255,255,0.12);color:white;border:1.5px solid rgba(255,255,255,0.35);padding:11px 22px;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .hero-btn-secondary:hover{background:rgba(255,255,255,0.20);}
-  .hero-stats{display:flex;gap:24px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.12);flex-wrap:wrap;}
+  .hero-stats{display:flex;gap:14px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.12);flex-wrap:wrap;}
+  .hero-stat,.hero-stat-static{appearance:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:white;text-align:left;padding:9px 12px;min-width:118px;}
+  .hero-stat{cursor:pointer;transition:background 0.2s,transform 0.2s,border-color 0.2s;}
+  .hero-stat:hover{background:rgba(255,255,255,0.16);border-color:rgba(240,192,48,0.65);transform:translateY(-1px);}
+  .hero-stat .hero-stat-label::after{content:'  View';color:var(--gold-bright);font-weight:800;text-transform:none;letter-spacing:0;}
   .hero-stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-bright);}
   .hero-stat-label{font-size:11px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:0.8px;margin-top:1px;}
+  .task-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:-8px 0 24px;}
+  .task-card{background:white;border:1.5px solid var(--border);border-top:4px solid var(--gold-bright);border-radius:12px;box-shadow:var(--shadow);color:var(--text);cursor:pointer;min-height:128px;padding:16px;text-align:left;transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s;}
+  .task-card:hover{border-color:var(--green-mid);box-shadow:0 5px 22px rgba(27,67,50,0.14);transform:translateY(-2px);}
+  .task-title{display:block;font-family:'Playfair Display',serif;font-size:17px;font-weight:800;color:var(--green-dark);line-height:1.2;margin-bottom:8px;}
+  .task-copy{display:block;font-size:12px;line-height:1.45;color:var(--text-mid);}
+  .task-action{display:block;font-size:11px;font-weight:800;color:var(--green);margin-top:12px;text-transform:uppercase;letter-spacing:0.6px;}
   .lookup-bar{background:white;border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .lookup-bar label{font-size:13px;font-weight:600;color:var(--text-mid);white-space:nowrap;}
   .lookup-input{flex:1;min-width:160px;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;text-transform:uppercase;letter-spacing:1px;}
@@ -61,7 +77,12 @@
   .lookup-result{width:100%;padding:14px 16px;border-radius:8px;font-size:13px;line-height:1.6;display:none;}
   .lookup-result.found{background:var(--green-pale);border:1px solid var(--green-light);color:var(--green-dark);}
   .lookup-result.notfound{background:#fef2f2;border:1px solid #fecaca;color:var(--red);}
-  .chat-container{display:flex;flex-direction:column;height:calc(100vh - 420px);min-height:420px;background:white;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
+  .lookup-result-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;margin-bottom:6px;}
+  .status-timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+  .timeline-step{background:white;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:11px;font-weight:800;padding:8px;text-align:center;}
+  .timeline-step.active,.timeline-step.complete{border-color:var(--green-mid);color:var(--green-dark);}
+  .timeline-step.active{box-shadow:inset 0 0 0 2px var(--gold-bright);}
+  .chat-container{display:flex;flex-direction:column;height:calc(100vh - 300px);height:calc(100dvh - 300px);min-height:520px;max-height:760px;background:white;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
   .chat-header{padding:14px 18px;background:linear-gradient(135deg,var(--green-dark),var(--green));border-bottom:3px solid var(--gold-bright);display:flex;align-items:center;gap:10px;}
   .ai-dot{width:9px;height:9px;background:var(--gold-bright);border-radius:50%;box-shadow:0 0 0 3px rgba(240,192,48,0.3);animation:pulse 2s infinite;flex-shrink:0;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
@@ -76,7 +97,7 @@
   .msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
   .msg.bot .msg-avatar{background:linear-gradient(135deg,var(--green-dark),var(--green-mid));color:white;border:2px solid var(--gold-bright);}
   .msg.user .msg-avatar{background:var(--text-mid);color:white;}
-  .msg-bubble{max-width:80%;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.65;}
+  .msg-bubble{max-width:86%;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.65;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap;}
   .msg.bot .msg-bubble{background:white;border:1px solid var(--border);color:var(--text);border-top-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
   .msg.user .msg-bubble{background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;border-top-right-radius:4px;}
   .typing-indicator{display:flex;gap:4px;align-items:center;padding:3px 0;}
@@ -98,7 +119,7 @@
   .send-btn svg{width:17px;height:17px;fill:white;}
   .section-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--green-dark);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
   .section-title::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--gold-bright),transparent);}
-  .announcement-card{background:white;border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:12px;border-left:4px solid var(--green-mid);box-shadow:var(--shadow);transition:all 0.2s;}
+  .announcement-card{background:white;border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:12px;border-left:4px solid var(--green-mid);box-shadow:var(--shadow);transition:all 0.2s;overflow-wrap:anywhere;word-break:break-word;}
   .announcement-card:hover{box-shadow:0 4px 20px rgba(27,67,50,0.13);}
   .announcement-card.urgent{border-left-color:var(--red);}
   .announcement-card.event{border-left-color:var(--gold-bright);}
@@ -116,7 +137,7 @@
   .stat-num{font-family:'Playfair Display',serif;font-size:28px;color:var(--green-dark);font-weight:700;}
   .stat-label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
   .requests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
-  .request-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
+  .request-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);overflow-wrap:anywhere;word-break:break-word;}
   .req-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
   .req-id{font-size:10px;color:var(--green-mid);font-weight:700;letter-spacing:1px;font-family:monospace;}
   .req-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
@@ -146,9 +167,9 @@
   .empty-state{text-align:center;padding:50px 20px;color:var(--text-light);}
   .empty-state .icon{font-size:38px;margin-bottom:10px;}
   .empty-state p{font-size:13px;}
-  .toast{position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 16px rgba(27,67,50,0.35);animation:slideIn 0.3s ease,fadeOut 0.3s ease 2.5s forwards;}
-  @keyframes slideIn{from{transform:translateX(120px);opacity:0}to{transform:translateX(0);opacity:1}}
-  @keyframes fadeOut{to{opacity:0;transform:translateX(120px)}}
+  .toast{position:fixed;bottom:16px;right:16px;max-width:calc(100vw - 32px);background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 16px rgba(27,67,50,0.35);animation:slideIn 0.3s ease,fadeOut 0.3s ease 2.5s forwards;overflow-wrap:anywhere;}
+  @keyframes slideIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
   .login-modal{position:fixed;inset:0;background:rgba(18,37,27,0.58);z-index:1000;align-items:center;justify-content:center;padding:20px;}
   .login-panel{width:min(100%,360px);background:white;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,0.25);padding:22px;}
   .login-panel h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--green-dark);margin-bottom:6px;}
@@ -174,29 +195,66 @@
   .audit-panel-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);}
   .audit-panel-header h3{font-size:14px;color:var(--green-dark);}
   .dashboard-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
-  .dashboard-list{padding:12px 16px;font-size:12px;color:var(--text-mid);}
+  .dashboard-list{padding:12px 16px;font-size:12px;color:var(--text-mid);overflow-wrap:anywhere;word-break:break-word;}
   .dashboard-list-item{border-bottom:1px solid var(--border);padding:8px 0;}
   .dashboard-list-item:last-child{border-bottom:none;}
   .dashboard-list-title{font-weight:700;color:var(--text);margin-bottom:2px;}
   .dashboard-list-meta{font-size:11px;color:var(--text-light);}
-  .audit-table-wrap{overflow-x:auto;}
+  .audit-table-wrap{overflow-x:auto;max-width:100%;}
   .audit-table{width:100%;border-collapse:collapse;font-size:12px;}
-  .audit-table th,.audit-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  .audit-table th,.audit-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;}
   .audit-table th{background:var(--green-pale);color:var(--text-mid);font-size:10px;letter-spacing:0.8px;text-transform:uppercase;}
   .audit-table td{color:var(--text);}
   .audit-status{font-size:12px;color:var(--text-mid);}
+  .trust-footer{max-width:960px;margin:12px auto 0;padding:24px 20px 32px;color:var(--text-mid);font-size:12px;line-height:1.6;}
+  .trust-footer-inner{border-top:1px solid var(--border);padding-top:18px;display:grid;grid-template-columns:1.2fr 1fr;gap:18px;}
+  .trust-footer strong{color:var(--green-dark);}
+  .trust-footer a{color:var(--green-dark);font-weight:800;}
+  .trust-note{background:var(--gold-pale);border:1px solid var(--gold-light);border-radius:8px;padding:12px;}
+  @media(max-width:900px){
+    .task-grid{grid-template-columns:repeat(2,1fr);}
+    .metric-grid{grid-template-columns:repeat(2,1fr);}
+  }
   @media(max-width:640px){
-    .hero{padding:24px 18px;}.hero h2{font-size:22px;}.hero-stats{gap:16px;}
+    .header{padding:0 12px;}.header-inner{height:62px;}.seal{width:44px;height:44px;}
+    .hero{padding:20px 16px;margin-bottom:18px;border-radius:12px;}.hero h2{font-size:21px;}.hero p{font-size:13px;margin-bottom:16px;}.hero-stats{gap:8px;margin-top:16px;padding-top:14px;}
+    .hero-stat,.hero-stat-static{flex:1 1 calc(50% - 8px);min-width:130px;padding:8px 10px;}
+    .task-grid{grid-template-columns:1fr;gap:10px;margin-bottom:18px;}
+    .task-card{min-height:106px;padding:14px;}
     .form-row{grid-template-columns:1fr;}.requests-grid{grid-template-columns:1fr;}.metric-grid,.dashboard-lists,.request-filters{grid-template-columns:1fr;}
-    .main{padding:16px 14px;}.tab{padding:11px 12px;font-size:12px;}
+    .main{padding:14px 12px;}.tab{padding:11px 12px;font-size:12px;flex:0 0 auto;}
     .brand-text h1{font-size:13px;}.brand-text p{display:none;}
-    .chat-container{height:calc(100vh - 380px);min-height:380px;}
+    .chat-container{height:calc(100vh - 112px);height:calc(100dvh - 112px);min-height:540px;max-height:none;border-radius:12px;}
+    .messages{padding:14px 12px;gap:10px;}
+    .msg-bubble{max-width:92%;font-size:14px;line-height:1.7;padding:12px 14px;}
+    .chat-input,.lookup-input,.form-input,.form-select,.form-textarea{font-size:16px;}
+    .quick-prompts{flex-wrap:nowrap;overflow-x:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;}
+    .qp{flex:0 0 auto;font-size:12px;padding:8px 12px;}
     .hero-actions{flex-direction:column;}
     .lookup-bar{flex-direction:column;align-items:stretch;}.lookup-btn{width:100%;}
+    .lookup-input{min-width:0;width:100%;}
+    .status-timeline{grid-template-columns:1fr 1fr;}
+    .req-footer{align-items:flex-start;flex-direction:column;gap:4px;}
+    .audit-table-wrap{overflow-x:visible;}
+    .audit-table,.audit-table thead,.audit-table tbody,.audit-table tr,.audit-table th,.audit-table td{display:block;width:100%;}
+    .audit-table thead{display:none;}
+    .audit-table tr{border-bottom:1px solid var(--border);padding:10px 12px;}
+    .audit-table td{border-bottom:none;padding:4px 0;}
+    .audit-table td:nth-child(1)::before{content:'Time: ';font-weight:800;color:var(--text-mid);}
+    .audit-table td:nth-child(2)::before{content:'Event: ';font-weight:800;color:var(--text-mid);}
+    .audit-table td:nth-child(3)::before{content:'Record: ';font-weight:800;color:var(--text-mid);}
+    .audit-table td:nth-child(4)::before{content:'Metadata: ';font-weight:800;color:var(--text-mid);}
+    .login-actions{flex-wrap:wrap;}
+    .trust-footer{padding:18px 12px 28px;}
+    .trust-footer-inner{grid-template-columns:1fr;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:0.01ms!important;}
   }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div class="gold-stripe"></div>
 <div class="header">
   <div class="header-inner">
@@ -207,21 +265,21 @@
         <p>Camden County · New Jersey · Est. 1915</p>
       </div>
     </div>
-    <button class="admin-btn" id="adminToggle" onclick="toggleAdmin()">⚙ Staff Login</button>
+    <button class="admin-btn" id="adminToggle" type="button">⚙ Staff Login</button>
   </div>
 </div>
 <div class="gold-divider"></div>
 <div class="nav-tabs">
   <div class="nav-inner">
-    <button class="tab active" onclick="switchTab('chat',this)">🤖 AI Assistant</button>
-    <button class="tab" onclick="switchTab('announcements',this)">📢 Announcements</button>
-    <button class="tab" onclick="switchTab('requests',this)">🎫 Service Requests <span class="badge" id="openCount">0</span></button>
+    <button class="tab active" type="button" data-tab="chat">🤖 AI Assistant</button>
+    <button class="tab" type="button" data-tab="announcements">📢 Announcements</button>
+    <button class="tab" type="button" data-tab="requests">🎫 Service Requests <span class="badge" id="openCount">0</span></button>
   </div>
 </div>
 <div class="staff-view-toggle" id="staffViewToggle" style="display:none;">
   <div class="staff-view-inner">
-    <button class="view-toggle-btn active" id="residentViewBtn" type="button" onclick="showResidentView()">Resident View</button>
-    <button class="view-toggle-btn" id="staffDashboardBtn" type="button" onclick="showStaffDashboard()">Staff Dashboard</button>
+    <button class="view-toggle-btn active" id="residentViewBtn" type="button" data-staff-view="resident">Resident View</button>
+    <button class="view-toggle-btn" id="staffDashboardBtn" type="button" data-staff-view="dashboard">Staff Dashboard</button>
   </div>
 </div>
 <div id="login-modal" class="login-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -235,13 +293,13 @@
     </div>
     <div class="form-group">
       <label class="form-label" for="staffPassword">Password</label>
-      <input class="form-input" id="staffPassword" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+      <input class="form-input" id="staffPassword" type="password" autocomplete="current-password" placeholder="Password"/>
     </div>
     </div>
     <div id="staffMfaPanel" style="display:none">
       <div class="form-group">
         <label class="form-label" for="staffMfaCode">Authenticator Code</label>
-        <input class="form-input" id="staffMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+        <input class="form-input" id="staffMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code"/>
       </div>
     </div>
     <div id="staffPasswordRecoveryPanel" style="display:none">
@@ -251,18 +309,18 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="staffConfirmPassword">Confirm Password</label>
-        <input class="form-input" id="staffConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password" onkeydown="if(event.key==='Enter')handleLoginPrimaryAction()"/>
+        <input class="form-input" id="staffConfirmPassword" type="password" autocomplete="new-password" placeholder="Confirm password"/>
       </div>
     </div>
     <div class="login-error" id="loginError" aria-live="polite"></div>
     <div class="login-actions">
-      <button class="login-cancel" id="passwordResetBtn" type="button" onclick="sendStaffPasswordReset()">Reset Password</button>
-      <button class="login-cancel" type="button" onclick="hideLoginModal()">Cancel</button>
-      <button class="submit-btn" id="loginSubmit" type="button" onclick="handleLoginPrimaryAction()">Login</button>
+      <button class="login-cancel" id="passwordResetBtn" type="button">Reset Password</button>
+      <button class="login-cancel" id="loginCancelBtn" type="button">Cancel</button>
+      <button class="submit-btn" id="loginSubmit" type="button">Login</button>
     </div>
   </div>
 </div>
-<div class="main">
+<div class="main" id="main-content" tabindex="-1">
   <div class="panel active" id="chat">
     <div class="hero">
       <div class="hero-content">
@@ -270,15 +328,37 @@
         <h2>Your Borough.<br/>At Your Fingertips.</h2>
         <p>Get instant answers about services, permits, and schedules — or report an issue directly to borough staff. Available 24 hours a day, 7 days a week.</p>
         <div class="hero-actions">
-          <button class="hero-btn-primary" onclick="scrollToChat()">💬 Chat with AI Assistant</button>
-          <button class="hero-btn-secondary" onclick="switchTab('requests',document.querySelectorAll('.tab')[2]);setTimeout(()=>document.getElementById('lookupInput').focus(),100)">🔍 Check Request Status</button>
+          <button class="hero-btn-primary" type="button" data-action="ask-question">💬 Chat with AI Assistant</button>
+          <button class="hero-btn-secondary" type="button" data-action="check-request">🔍 Check Request Status</button>
         </div>
         <div class="hero-stats">
-          <div class="hero-stat"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
-          <div class="hero-stat"><div class="hero-stat-num" id="heroOpen">0</div><div class="hero-stat-label">Open Requests</div></div>
-          <div class="hero-stat"><div class="hero-stat-num" id="heroAnn">3</div><div class="hero-stat-label">Active Notices</div></div>
+          <div class="hero-stat-static"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
+          <button class="hero-stat" type="button" data-action="check-request" aria-label="View open service requests"><div class="hero-stat-num" id="heroOpen">0</div><div class="hero-stat-label">Open Requests</div></button>
+          <button class="hero-stat" type="button" data-action="see-updates" aria-label="View active borough notices"><div class="hero-stat-num" id="heroAnn">3</div><div class="hero-stat-label">Active Notices</div></button>
         </div>
       </div>
+    </div>
+    <div class="task-grid" aria-label="Resident actions">
+      <button class="task-card" type="button" data-action="ask-question" aria-label="Ask a borough question">
+        <span class="task-title">Ask a Borough Question</span>
+        <span class="task-copy">Trash, recycling, permits, meetings, hours, forms.</span>
+        <span class="task-action">Open assistant</span>
+      </button>
+      <button class="task-card" type="button" data-action="report-problem" aria-label="Report a non-emergency borough problem">
+        <span class="task-title">Report a Problem</span>
+        <span class="task-copy">Potholes, streetlights, trash, public works concerns.</span>
+        <span class="task-action">Start report</span>
+      </button>
+      <button class="task-card" type="button" data-action="check-request" aria-label="Check a service request status">
+        <span class="task-title">Check a Request</span>
+        <span class="task-copy">Enter a tracking number and see the latest status.</span>
+        <span class="task-action">Check status</span>
+      </button>
+      <button class="task-card" type="button" data-action="see-updates" aria-label="See borough updates and announcements">
+        <span class="task-title">See Borough Updates</span>
+        <span class="task-copy">Alerts, announcements, meetings, and service notices.</span>
+        <span class="task-action">View notices</span>
+      </button>
     </div>
     <div class="chat-container" id="chatContainer">
       <div class="chat-header">
@@ -288,23 +368,24 @@
           <p>Ask questions and report non-emergency municipal issues. For emergencies, call 911.</p>
         </div>
       </div>
-      <div class="messages" id="messages">
+      <div class="messages" id="messages" aria-live="polite" aria-relevant="additions text">
         <div class="msg bot">
           <div class="msg-avatar">M</div>
           <div class="msg-bubble">Welcome to the Borough of Magnolia. I can answer approved borough service questions and help log non-emergency service requests.<br><br>Do not submit emergencies or highly sensitive personal information here. For emergencies, call 911.<br><br>How can I help you today?</div>
         </div>
       </div>
       <div class="quick-prompts">
-        <span class="qp" onclick="quickSend('When is bulk trash pickup?')">Bulk trash</span>
-        <span class="qp" onclick="quickSend('How do I get a permit?')">Permits</span>
-        <span class="qp" onclick="quickSend('When is the next council meeting?')">Council meeting</span>
-        <span class="qp" onclick="quickSend('I want to report a pothole')">Report issue</span>
-        <span class="qp" onclick="quickSend('Summarize open requests for staff review')">Staff: open requests</span>
-        <span class="qp" onclick="quickSend('Draft a concise borough announcement')">Staff: draft notice</span>
+        <button class="qp" type="button" data-prompt="When is trash and recycling pickup?">Trash and recycling</button>
+        <button class="qp" type="button" data-prompt="How do I report a pothole?">Report a pothole</button>
+        <button class="qp" type="button" data-prompt="How do I request public records?">Public records</button>
+        <button class="qp" type="button" data-prompt="Where do I find borough forms?">Borough forms</button>
+        <button class="qp" type="button" data-prompt="Who do I contact for public works?">Public Works</button>
+        <button class="qp" type="button" data-prompt="What should new residents know?">New residents</button>
+        <button class="qp" type="button" data-prompt="How do I check a service request?">Check a request</button>
       </div>
       <div class="chat-input-area">
-        <input class="chat-input" id="chatInput" placeholder="Ask anything about Magnolia Borough..." onkeydown="handleKey(event)"/>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+        <input class="chat-input" id="chatInput" placeholder="Ask anything about Magnolia Borough..."/>
+        <button class="send-btn" id="sendBtn" type="button" aria-label="Send message">
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
@@ -317,8 +398,8 @@
       <div class="admin-panel">
         <h2>📢 Post New Announcement</h2>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="annTitle" placeholder="Announcement title..."/></div>
-          <div class="form-group"><label class="form-label">Type</label>
+          <div class="form-group"><label class="form-label" for="annTitle">Title</label><input class="form-input" id="annTitle" placeholder="Announcement title..."/></div>
+          <div class="form-group"><label class="form-label" for="annType">Type</label>
             <select class="form-select" id="annType">
               <option value="info">ℹ️ General Info</option>
               <option value="urgent">🚨 Urgent</option>
@@ -326,18 +407,18 @@
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Message</label><textarea class="form-textarea" id="annBody" placeholder="Write your announcement..."></textarea></div>
-        <button class="submit-btn" onclick="postAnnouncement()">Post Announcement</button>
+        <div class="form-group"><label class="form-label" for="annBody">Message</label><textarea class="form-textarea" id="annBody" placeholder="Write your announcement..."></textarea></div>
+        <button class="submit-btn" id="postAnnouncementBtn" type="button">Post Announcement</button>
       </div>
     </div>
     <div id="annList"></div>
   </div>
   <div class="panel" id="requests">
     <div class="lookup-bar">
-      <label>🔍 Check Request Status:</label>
+      <label for="lookupInput">🔍 Check Request Status:</label>
       <input class="lookup-input" id="lookupInput" placeholder="Enter tracking number e.g. MGN-1234" maxlength="8"/>
-      <button class="lookup-btn" onclick="lookupTicket()">Check Status</button>
-      <div class="lookup-result" id="lookupResult"></div>
+      <button class="lookup-btn" id="lookupBtn" type="button">Check Status</button>
+      <div class="lookup-result" id="lookupResult" aria-live="polite"></div>
     </div>
     <div class="stats-row">
       <div class="stat-card"><div class="stat-num" id="statOpen">0</div><div class="stat-label">Open</div></div>
@@ -348,8 +429,8 @@
       <div class="admin-panel">
         <h2>🎫 Log Service Request</h2>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="reqTitle" placeholder="e.g. Pothole on Elm Street"/></div>
-          <div class="form-group"><label class="form-label">Category</label>
+          <div class="form-group"><label class="form-label" for="reqTitle">Title</label><input class="form-input" id="reqTitle" placeholder="e.g. Pothole on Elm Street"/></div>
+          <div class="form-group"><label class="form-label" for="reqCat">Category</label>
             <select class="form-select" id="reqCat">
               <option>🛣️ Roads & Infrastructure</option>
               <option>💡 Utilities & Lighting</option>
@@ -361,18 +442,18 @@
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="reqDesc" placeholder="Describe the issue..."></textarea></div>
+        <div class="form-group"><label class="form-label" for="reqDesc">Description</label><textarea class="form-textarea" id="reqDesc" placeholder="Describe the issue..."></textarea></div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Status</label>
+          <div class="form-group"><label class="form-label" for="reqStatus">Status</label>
             <select class="form-select" id="reqStatus">
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
               <option value="resolved">Resolved</option>
             </select>
           </div>
-          <div class="form-group"><label class="form-label">Address / Location</label><input class="form-input" id="reqAddr" placeholder="e.g. 100 West Evesham Ave"/></div>
+          <div class="form-group"><label class="form-label" for="reqAddr">Address / Location</label><input class="form-input" id="reqAddr" placeholder="e.g. 100 West Evesham Ave"/></div>
         </div>
-        <button class="submit-btn" onclick="addRequest()">Log Request</button>
+        <button class="submit-btn" id="addRequestBtn" type="button">Log Request</button>
       </div>
     </div>
     <div id="staffRequestFilters" class="request-filters" style="display:none">
@@ -384,7 +465,7 @@
         <option value="resolved">Resolved</option>
         <option value="closed">Closed</option>
       </select>
-      <button class="lookup-btn" type="button" onclick="loadStaffRequests()">Apply</button>
+      <button class="lookup-btn" id="applyRequestFiltersBtn" type="button">Apply</button>
     </div>
     <h2 class="section-title">All Requests</h2>
     <div id="reqList"></div>
@@ -396,7 +477,7 @@
       <h2>Staff Dashboard</h2>
       <p>Operational snapshot for borough staff.</p>
     </div>
-    <button class="login-cancel" type="button" onclick="refreshStaffData()">Refresh</button>
+    <button class="login-cancel" id="dashboardRefreshBtn" type="button">Refresh</button>
   </div>
   <div class="metric-grid">
     <div class="metric-card">
@@ -466,8 +547,40 @@
     </div>
   </div>
 </div>
+<footer class="trust-footer">
+  <div class="trust-footer-inner">
+    <div>
+      <strong id="footerBoroughName">Borough of Magnolia</strong><br/>
+      <span id="footerCountyState">Camden County, New Jersey</span><br/>
+      <span id="footerContact">Borough Hall contact details should be confirmed by borough staff before broad public use.</span><br/>
+      Accessibility statement and terms/use language should be approved by the borough.<br/>
+      Powered by Magnolia Borough AI Assistant.
+    </div>
+    <div class="trust-note">
+      This portal is not monitored for emergencies. For emergencies, call 911.<br/>
+      Do not submit highly sensitive personal information. Information submitted through this portal may be reviewed by borough staff and may be retained according to applicable public records and records-retention requirements. Final wording should be approved by the borough.
+    </div>
+  </div>
+</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const BOROUGH_CONFIG={
+  name:'Borough of Magnolia',
+  county:'Camden County',
+  state:'New Jersey',
+  established:'1915',
+  phone:'(856) 783-1520',
+  hallAddress:'Borough Hall address to be confirmed by borough staff',
+  serviceCategories:[
+    'Roads & Infrastructure',
+    'Utilities & Lighting',
+    'Parks & Public Spaces',
+    'Sanitation & Trash',
+    'Noise & Safety',
+    'Permits & Zoning',
+    'Other'
+  ]
+};
 window.isStaffAuthenticated=false;
 let staffSession=null;
 let staffProfile=null;
@@ -499,6 +612,30 @@ function statusLabel(status){
   if(value==='in_progress')return 'In Progress';
   return value.charAt(0).toUpperCase()+value.slice(1);
 }
+function statusExplanation(status){
+  var value=normalizeUiStatus(status);
+  if(value==='in_progress')return 'Staff has started working on this request.';
+  if(value==='resolved')return 'Marked complete by staff.';
+  if(value==='closed')return 'Closed in the borough system.';
+  return 'Received and waiting for review.';
+}
+function statusTimelineHtml(status){
+  var value=normalizeUiStatus(status);
+  var stages=[
+    {key:'open',label:'Submitted'},
+    {key:'review',label:'Under Review'},
+    {key:'in_progress',label:'In Progress'},
+    {key:'resolved',label:'Resolved'}
+  ];
+  if(value==='closed'){
+    stages.push({key:'closed',label:'Closed'});
+  }
+  var activeIndex=value==='closed'?4:value==='resolved'?3:value==='in_progress'?2:1;
+  return '<div class="status-timeline" aria-label="Request status timeline">'+stages.map(function(stage,index){
+    var state=index<activeIndex?'complete':index===activeIndex?'active':'';
+    return '<div class="timeline-step '+state+'">'+escapeHtml(stage.label)+'</div>';
+  }).join('')+'</div>';
+}
 function renderAnnouncements(){
   const list=document.getElementById('annList');
   if(!announcements.length){list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No announcements yet.</p></div>';return;}
@@ -516,7 +653,7 @@ function renderRequests(){
   const list=document.getElementById('reqList');
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
   list.innerHTML='<div class="requests-grid">'+requests.map(function(r){
-    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" onclick="updateRequestStatus('${r.id}','open')">Open</button><button type="button" onclick="updateRequestStatus('${r.id}','in_progress')">In Progress</button><button type="button" onclick="updateRequestStatus('${r.id}','resolved')">Resolve</button></div>`:'';
+    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" data-request-id="${r.id}" data-request-update="open">Open</button><button type="button" data-request-id="${r.id}" data-request-update="in_progress">In Progress</button><button type="button" data-request-id="${r.id}" data-request-update="resolved">Resolve</button></div>`:'';
     return `<div class="request-card"><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div><div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
   }).join('')+'</div>';
 }
@@ -537,8 +674,17 @@ async function lookupTicket(){
     autoAddRequest(data.request);
     var ticket=normalizeCreatedRequestRecord(data.request);
     const s=statusLabel(ticket.status);
+    var location=data.request.address||data.request.location||'Not provided';
+    var updated=data.request.updated_at?formatRequestDate(data.request.updated_at):'Not available';
     result.className='lookup-result found';
-    result.innerHTML='Found request '+escapeHtml(ticket.id)+'<br/><strong>Issue:</strong> '+escapeHtml(ticket.title)+'<br/><strong>Status:</strong> '+escapeHtml(s)+'<br/><strong>Category:</strong> '+escapeHtml(ticket.cat)+'<br/><strong>Submitted:</strong> '+escapeHtml(ticket.date);
+    result.innerHTML='<div class="lookup-result-title">Request '+escapeHtml(ticket.id)+'</div>'+
+      '<strong>Issue:</strong> '+escapeHtml(ticket.title)+'<br/>'+
+      '<strong>Status:</strong> '+escapeHtml(s)+' - '+escapeHtml(statusExplanation(ticket.status))+'<br/>'+
+      '<strong>Category:</strong> '+escapeHtml(ticket.cat)+'<br/>'+
+      '<strong>Location:</strong> '+escapeHtml(location)+'<br/>'+
+      '<strong>Submitted:</strong> '+escapeHtml(ticket.date)+'<br/>'+
+      '<strong>Last updated:</strong> '+escapeHtml(updated)+
+      statusTimelineHtml(ticket.status);
   }catch(err){
     result.className='lookup-result notfound';
     result.innerHTML='No request found for <strong>'+escapeHtml(id)+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
@@ -560,6 +706,58 @@ function switchTab(name,el){
   }
   if(name==='announcements'){
     loadAnnouncements(window.isStaffAuthenticated).catch(function(err){console.warn('Announcement load failed:',err.message||err);});
+  }
+}
+function getTabButton(name){
+  var panelIds=['chat','announcements','requests'];
+  var index=panelIds.indexOf(name);
+  return index>=0?document.querySelectorAll('.tab')[index]:null;
+}
+function switchTabByName(name){
+  var tab=getTabButton(name);
+  if(tab){
+    switchTab(name,tab);
+  }
+}
+function focusAssistant(){
+  switchTabByName('chat');
+  scrollToChat();
+}
+function focusRequestLookup(){
+  switchTabByName('requests');
+  setTimeout(function(){
+    var input=document.getElementById('lookupInput');
+    if(input)input.focus();
+  },100);
+}
+function focusAnnouncements(){
+  switchTabByName('announcements');
+  setTimeout(function(){
+    var title=document.querySelector('#announcements .section-title');
+    if(title)title.scrollIntoView({behavior:'smooth',block:'start'});
+  },50);
+}
+function startProblemReport(){
+  switchTabByName('chat');
+  setTimeout(function(){
+    quickSend('I want to report a non-emergency borough problem.');
+  },150);
+}
+function handleResidentAction(action){
+  if(action==='ask-question'){
+    focusAssistant();
+    return;
+  }
+  if(action==='report-problem'){
+    startProblemReport();
+    return;
+  }
+  if(action==='check-request'){
+    focusRequestLookup();
+    return;
+  }
+  if(action==='see-updates'){
+    focusAnnouncements();
   }
 }
 function scrollToChat(){document.getElementById('chatContainer').scrollIntoView({behavior:'smooth'});setTimeout(function(){document.getElementById('chatInput').focus();},400);}
@@ -1196,9 +1394,15 @@ function escapeHtml(text){
 function addMessage(role,text){
   var msgs=document.getElementById('messages');
   var div=document.createElement('div');
-  var safeText=escapeHtml(text).replace(/\n/g,'<br/>');
+  var avatar=document.createElement('div');
+  var bubble=document.createElement('div');
   div.className='msg '+role;
-  div.innerHTML='<div class="msg-avatar">'+(role==='bot'?'M':'R')+'</div><div class="msg-bubble">'+safeText+'</div>';
+  avatar.className='msg-avatar';
+  avatar.textContent=role==='bot'?'M':'R';
+  bubble.className='msg-bubble';
+  bubble.textContent=text;
+  div.appendChild(avatar);
+  div.appendChild(bubble);
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 function updateChatUI(text){
@@ -1272,9 +1476,87 @@ async function sendMessage(){
 }
 function showToast(msg){
   var t=document.createElement('div');t.className='toast';t.textContent=msg;
+  t.setAttribute('role','status');
+  t.setAttribute('aria-live','polite');
   document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
 }
-renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
+function initInteractiveControls(){
+  function bindClick(id,handler){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener('click',handler);
+  }
+  var footerName=document.getElementById('footerBoroughName');
+  var footerCountyState=document.getElementById('footerCountyState');
+  var footerContact=document.getElementById('footerContact');
+  if(footerName)footerName.textContent=BOROUGH_CONFIG.name;
+  if(footerCountyState)footerCountyState.textContent=BOROUGH_CONFIG.county+', '+BOROUGH_CONFIG.state;
+  if(footerContact)footerContact.textContent=BOROUGH_CONFIG.hallAddress+' | '+BOROUGH_CONFIG.phone;
+  bindClick('adminToggle',toggleAdmin);
+  bindClick('passwordResetBtn',sendStaffPasswordReset);
+  bindClick('loginCancelBtn',hideLoginModal);
+  bindClick('loginSubmit',handleLoginPrimaryAction);
+  bindClick('sendBtn',sendMessage);
+  bindClick('postAnnouncementBtn',postAnnouncement);
+  bindClick('lookupBtn',lookupTicket);
+  bindClick('addRequestBtn',addRequest);
+  bindClick('applyRequestFiltersBtn',function(){loadStaffRequests();});
+  bindClick('dashboardRefreshBtn',refreshStaffData);
+  document.querySelectorAll('[data-tab]').forEach(function(button){
+    button.addEventListener('click',function(){
+      switchTab(button.getAttribute('data-tab'),button);
+    });
+  });
+  document.querySelectorAll('[data-staff-view]').forEach(function(button){
+    button.addEventListener('click',function(){
+      if(button.getAttribute('data-staff-view')==='dashboard'){
+        showStaffDashboard();
+      }else{
+        showResidentView();
+      }
+    });
+  });
+  ['staffPassword','staffMfaCode','staffConfirmPassword'].forEach(function(id){
+    var input=document.getElementById(id);
+    if(input)input.addEventListener('keydown',function(event){
+      if(event.key==='Enter')handleLoginPrimaryAction();
+    });
+  });
+  var chatInput=document.getElementById('chatInput');
+  if(chatInput)chatInput.addEventListener('keydown',handleKey);
+  document.querySelectorAll('[data-action]').forEach(function(button){
+    button.addEventListener('click',function(){
+      handleResidentAction(button.getAttribute('data-action'));
+    });
+  });
+  document.querySelectorAll('[data-prompt]').forEach(function(button){
+    button.addEventListener('click',function(){
+      quickSend(button.getAttribute('data-prompt')||'');
+    });
+  });
+  var requestList=document.getElementById('reqList');
+  if(requestList){
+    requestList.addEventListener('click',function(event){
+      var button=event.target.closest('[data-request-update]');
+      if(!button)return;
+      updateRequestStatus(button.getAttribute('data-request-id'),button.getAttribute('data-request-update'));
+    });
+  }
+}
+window.MagnoliaDebugLayout=function(){
+  var viewport=document.documentElement.clientWidth;
+  return Array.from(document.querySelectorAll('body *')).filter(function(el){
+    return el.scrollWidth>viewport;
+  }).map(function(el){
+    return {
+      tag:el.tagName,
+      id:el.id||'',
+      className:typeof el.className==='string'?el.className:'',
+      scrollWidth:el.scrollWidth,
+      viewport:viewport
+    };
+  });
+};
+initInteractiveControls();renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
 </script>
 </body>
 </html>

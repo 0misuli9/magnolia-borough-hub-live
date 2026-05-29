@@ -16,6 +16,8 @@ Protected APIs require `Authorization: Bearer <Supabase access token>`.
 
 `api/_staff-auth.js` verifies the token with Supabase and accepts only trusted staff roles in `app_metadata`. Optional MFA enforcement is controlled by `STAFF_REQUIRE_MFA=true`.
 
+Important current-state note: the database migration also creates `public.staff_profiles`, but current production authorization still uses Supabase Auth `app_metadata`. Before switching the source of truth to `staff_profiles`, populate the staff profile rows and test staff login in Supabase so the existing borough account is not locked out. The desired hardening direction is individual staff accounts, MFA required, and `staff_profiles` as the authoritative role table for both APIs and RLS.
+
 Staff-only APIs:
 
 - `GET /api/requests`
@@ -49,9 +51,15 @@ APIs trim and limit user input lengths. The frontend normalizes and escapes requ
 
 Do not render resident titles, descriptions, addresses, or announcement bodies with raw `innerHTML` unless escaped first.
 
+The frontend no longer uses inline `onclick`/`onkeydown` handlers. Dynamic chat messages are rendered with DOM nodes and `textContent`. Some static templates still use `innerHTML`; user-generated fields in those templates must stay escaped with `escapeHtml`.
+
+The current CSP still permits inline script/style because `index.html` contains an inline application script and inline CSS. A future strict-CSP pass should move frontend JavaScript and CSS into external files or add nonces/hashes, then remove `script-src 'unsafe-inline'`.
+
 ## Abuse Controls
 
 `api/_http.js` includes lightweight in-memory rate limiting for chat, request creation, and public tracking lookup. This is useful for basic protection on a warm serverless instance, but production should add durable edge or provider-level rate limiting.
+
+For Vercel serverless production, durable rate limiting should be added with Vercel KV, Upstash, or a Supabase-backed bucket table. In-memory buckets are not enough for a public municipal launch because serverless instances are stateless.
 
 ## Privacy
 

@@ -159,6 +159,12 @@ export function getIntQuery(req, name, fallback, min, max) {
 }
 
 export function getClientIp(req) {
+  // Prefer the platform-trusted client IP header; XFF is only a platform-dependent fallback.
+  const realIp = req.headers?.["x-real-ip"];
+  if (typeof realIp === "string" && realIp.trim()) {
+    return realIp.trim();
+  }
+
   const forwardedFor = req.headers?.["x-forwarded-for"];
   const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
 

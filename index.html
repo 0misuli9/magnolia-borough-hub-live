@@ -55,12 +55,6 @@
   .hero-btn-primary:hover{background:#f5d040;transform:translateY(-1px);}
   .hero-btn-secondary{background:rgba(255,255,255,0.12);color:white;border:1.5px solid rgba(255,255,255,0.35);padding:11px 22px;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .hero-btn-secondary:hover{background:rgba(255,255,255,0.20);}
-  .hero-stats{display:flex;gap:14px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.12);flex-wrap:wrap;}
-  .hero-stat,.hero-stat-static{appearance:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:white;text-align:left;padding:9px 12px;min-width:118px;}
-  .hero-stat{cursor:pointer;transition:background 0.2s,transform 0.2s,border-color 0.2s;}
-  .hero-stat:hover{background:rgba(255,255,255,0.16);border-color:rgba(240,192,48,0.65);transform:translateY(-1px);}
-  .hero-stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-bright);}
-  .hero-stat-label{font-size:11px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:0.8px;margin-top:1px;}
   .task-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:-8px 0 24px;}
   .task-card{background:white;border:1.5px solid var(--border);border-top:4px solid var(--gold-bright);border-radius:12px;box-shadow:var(--shadow);color:var(--text);cursor:pointer;min-height:128px;padding:16px;text-align:left;transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s;}
   .task-card:hover{border-color:var(--green-mid);box-shadow:0 5px 22px rgba(27,67,50,0.14);transform:translateY(-2px);}
@@ -274,8 +268,7 @@
   }
   @media(max-width:640px){
     .header{padding:0 12px;}.header-inner{height:62px;}.seal{width:44px;height:44px;}
-    .hero{padding:20px 16px;margin-bottom:18px;border-radius:12px;}.hero h2{font-size:21px;}.hero p{font-size:13px;margin-bottom:16px;}.hero-stats{gap:8px;margin-top:16px;padding-top:14px;}
-    .hero-stat,.hero-stat-static{flex:1 1 calc(50% - 8px);min-width:130px;padding:8px 10px;}
+    .hero{padding:20px 16px;margin-bottom:18px;border-radius:12px;}.hero h2{font-size:21px;}.hero p{font-size:13px;margin-bottom:16px;}
     .task-grid{grid-template-columns:1fr;gap:10px;margin-bottom:18px;}
     .task-card{min-height:106px;padding:14px;}
     .resident-section{padding:16px;border-radius:12px;}
@@ -394,10 +387,6 @@
         <p>Get instant answers about services, permits, and schedules — or report an issue directly to borough staff. Available 24 hours a day, 7 days a week.</p>
         <div class="hero-actions">
           <button class="hero-btn-primary" type="button" data-action="start-here">Start Here</button>
-        </div>
-        <div class="hero-stats">
-          <div class="hero-stat-static"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
-          <div class="hero-stat-static"><div class="hero-stat-num" id="heroAnn">0</div><div class="hero-stat-label">Active Notices</div></div>
         </div>
       </div>
     </div>
@@ -847,9 +836,6 @@ let activeDrawerRequest=null;
 let drawerReturnFocus=null;
 let loginReturnFocus=null;
 
-function updateHeroStats(){
-  document.getElementById('heroAnn').textContent=announcements.length;
-}
 function normalizeUiStatus(status){
   var value=String(status||'open').toLowerCase().replace(/-/g,'_');
   if(value==='pending')return 'open';
@@ -914,7 +900,6 @@ function renderRequests(){
   document.getElementById('statProgress').textContent=prog;
   document.getElementById('statResolved').textContent=res;
   document.getElementById('openCount').textContent=open+prog;
-  updateHeroStats();
   const list=document.getElementById('reqList');
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
   list.innerHTML='<div class="requests-grid">'+requests.map(function(r){
@@ -1668,12 +1653,10 @@ async function loadAnnouncements(staffMode,existingToken){
     announcements=(data.announcements||[]).map(normalizeAnnouncementRecord).filter(Boolean);
     renderAnnouncements();
     renderCalendar();
-    updateHeroStats();
   }catch(err){
     console.warn('Announcement load failed:',err.message||err);
     renderAnnouncements();
     renderCalendar();
-    updateHeroStats();
   }
 }
 async function postAnnouncement(){
@@ -2418,7 +2401,7 @@ function initInteractiveControls(){
     });
   }
 }
-populateResidentDepth();initInteractiveControls();renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
+populateResidentDepth();initInteractiveControls();renderAnnouncements();renderRequests();loadAnnouncements();initStaffAuth();
 </script>
 </body>
 </html>

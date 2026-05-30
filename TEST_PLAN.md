@@ -41,14 +41,14 @@ rg -n "Math\.random|MGN-\\\\d\\{4\\}" api index.html
 Run at 360px, 390px, 768px, 1024px, and desktop wide.
 
 1. Open the resident view.
-2. Confirm the hero stats are informational only.
+2. Confirm the hero presents one Start Here action and no stat strip.
 3. Tap Start Here and confirm the action-card area is brought into view.
 4. Use the task cards to open the assistant, request form, lookup, announcements, departments, calendar, and forms sections.
 5. Ask a long assistant question and read the response.
 6. Focus the chat input, lookup input, and form fields on a phone.
 7. Scroll every resident and staff view horizontally.
 
-Expected: hero stats do not duplicate task-card navigation, chat is readable without line-by-line scrolling, inputs do not trigger mobile zoom, and there is no sideways whitespace.
+Expected: the hero does not duplicate task-card navigation, chat is readable without line-by-line scrolling, inputs do not trigger mobile zoom, and there is no sideways whitespace.
 
 ### Test 0A - Task Cards And Prompts
 

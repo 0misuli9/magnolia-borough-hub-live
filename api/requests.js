@@ -401,7 +401,7 @@ async function handleCreate(req, res) {
     body,
     source,
     canSetStatus: staff.authenticated,
-    requestedTrackingNumber: body.tracking_number,
+    requestedTrackingNumber: staff.authenticated ? body.tracking_number : "",
   });
   await writeAudit("request_created", staff.authenticated ? staff.user.id : null, createdRequest.tracking_number, {
     source: createdRequest.source,

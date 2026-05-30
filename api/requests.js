@@ -37,6 +37,13 @@ function safeRequestShape(body) {
   };
 }
 
+function sanitizeStaffSearch(value) {
+  return String(value || "")
+    .replace(/[%_]/g, "\\$&")
+    .replace(/[(),]/g, " ")
+    .trim();
+}
+
 function buildPatchRecord(body) {
   const patch = {
     updated_at: new Date().toISOString(),
@@ -272,10 +279,12 @@ async function handleStaffList(req, res) {
   }
 
   if (search) {
-    const escaped = search.replace(/[%_]/g, "\\$&");
-    query = query.or(
-      `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
-    );
+    const escaped = sanitizeStaffSearch(search);
+    query = escaped
+      ? query.or(
+        `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
+      )
+      : query.eq("tracking_number", "__NO_VALID_SEARCH__");
   }
 
   const { data, error, count } = await query;
@@ -330,10 +339,12 @@ async function handleStaffUrgentList(req, res, { supabase, limit, offset, status
   }
 
   if (search) {
-    const escaped = search.replace(/[%_]/g, "\\$&");
-    query = query.or(
-      `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
-    );
+    const escaped = sanitizeStaffSearch(search);
+    query = escaped
+      ? query.or(
+        `tracking_number.ilike.%${escaped}%,title.ilike.%${escaped}%,address.ilike.%${escaped}%,category.ilike.%${escaped}%`,
+      )
+      : query.eq("tracking_number", "__NO_VALID_SEARCH__");
   }
 
   const { data, error, count } = await query;

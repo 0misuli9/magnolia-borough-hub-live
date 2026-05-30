@@ -93,7 +93,7 @@ export async function createRequestRecord({
   }
 
   const trackingNumber =
-    normalizeTrackingNumber(requestedTrackingNumber || body?.tracking_number) ||
+    normalizeTrackingNumber(requestedTrackingNumber) ||
     await createUniqueTrackingNumber(supabase, REQUESTS_TABLE);
   const insertPayload = buildRequestRecord({ ...body, title, description }, trackingNumber, source, canSetStatus);
 

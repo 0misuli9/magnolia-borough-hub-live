@@ -41,15 +41,14 @@ rg -n "Math\.random|MGN-\\\\d\\{4\\}" api index.html
 Run at 360px, 390px, 768px, 1024px, and desktop wide.
 
 1. Open the resident view.
-2. Tap Open Requests in the hero stats.
-3. Confirm Service Requests opens and the lookup field is focused.
-4. Tap Active Notices in the hero stats.
-5. Confirm Announcements opens.
-6. Ask a long assistant question and read the response.
-7. Focus the chat input, lookup input, and form fields on a phone.
-8. Scroll every resident and staff view horizontally.
+2. Confirm the hero stats are informational only.
+3. Tap Start Here and confirm the action-card area is brought into view.
+4. Use the task cards to open the assistant, request form, lookup, announcements, departments, calendar, and forms sections.
+5. Ask a long assistant question and read the response.
+6. Focus the chat input, lookup input, and form fields on a phone.
+7. Scroll every resident and staff view horizontally.
 
-Expected: stats route correctly, chat is readable without line-by-line scrolling, inputs do not trigger mobile zoom, and there is no sideways whitespace.
+Expected: hero stats do not duplicate task-card navigation, chat is readable without line-by-line scrolling, inputs do not trigger mobile zoom, and there is no sideways whitespace.
 
 ### Test 0A - Task Cards And Prompts
 

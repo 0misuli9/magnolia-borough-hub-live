@@ -347,7 +347,7 @@
     <button class="view-toggle-btn" id="staffDashboardBtn" type="button" data-staff-view="dashboard">Staff Dashboard</button>
   </div>
 </div>
-<div id="login-modal" class="login-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+<div id="login-modal" class="login-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="loginTitle" aria-hidden="true">
   <div class="login-panel">
     <h2 id="loginTitle">Staff Login</h2>
     <p>Sign in with your borough staff account to manage announcements and service requests.</p>
@@ -397,7 +397,6 @@
         </div>
         <div class="hero-stats">
           <div class="hero-stat-static"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Always Available</div></div>
-          <div class="hero-stat-static"><div class="hero-stat-num" id="heroResolvedMonth">—</div><div class="hero-stat-label">Resolved This Month</div></div>
           <div class="hero-stat-static"><div class="hero-stat-num" id="heroAnn">0</div><div class="hero-stat-label">Active Notices</div></div>
         </div>
       </div>
@@ -846,16 +845,9 @@ let pendingPhotoUploads=[];
 let activeDrawerTrackingNumber=null;
 let activeDrawerRequest=null;
 let drawerReturnFocus=null;
+let loginReturnFocus=null;
 
 function updateHeroStats(){
-  var resolvedThisMonth=requests.filter(function(r){
-    if(normalizeUiStatus(r.status)!=='resolved')return false;
-    var date=new Date(r.updated_at||r.created_at||r.date||0);
-    var now=new Date();
-    return Number.isFinite(date.getTime())&&date.getMonth()===now.getMonth()&&date.getFullYear()===now.getFullYear();
-  }).length;
-  var resolvedTarget=document.getElementById('heroResolvedMonth');
-  if(resolvedTarget)resolvedTarget.textContent=requests.length?resolvedThisMonth:'—';
   document.getElementById('heroAnn').textContent=announcements.length;
 }
 function normalizeUiStatus(status){
@@ -951,11 +943,11 @@ async function lookupTicket(){
     const s=statusLabel(ticket.status);
     var updated=data.request.updated_at?formatRequestDate(data.request.updated_at):'Not available';
     result.className='lookup-result found';
-    result.innerHTML='<div class="lookup-result-title">Request '+escapeHtml(ticket.id)+'</div>'+
-      '<strong>Issue:</strong> '+escapeHtml(ticket.title)+'<br/>'+
+    result.innerHTML='<div class="lookup-result-title">Request '+ticket.id+'</div>'+
+      '<strong>Issue:</strong> '+ticket.title+'<br/>'+
       '<strong>Status:</strong> '+escapeHtml(s)+' - '+escapeHtml(statusExplanation(ticket.status))+'<br/>'+
-      '<strong>Category:</strong> '+escapeHtml(ticket.cat)+'<br/>'+
-      '<strong>Submitted:</strong> '+escapeHtml(ticket.date)+'<br/>'+
+      '<strong>Category:</strong> '+ticket.cat+'<br/>'+
+      '<strong>Submitted:</strong> '+ticket.date+'<br/>'+
       '<strong>Last updated:</strong> '+escapeHtml(updated)+
       statusTimelineHtml(ticket.status);
   }catch(err){
@@ -1194,13 +1186,22 @@ function resetStaffLoginForm(){
   setStaffLoginMode('password');
 }
 function showLoginModal(){
+  loginReturnFocus=document.activeElement;
   resetStaffLoginForm();
-  document.getElementById('login-modal').style.display='flex';
+  var modal=document.getElementById('login-modal');
+  modal.style.display='flex';
+  modal.setAttribute('aria-hidden','false');
   setTimeout(function(){document.getElementById('staffEmail').focus();},50);
 }
 function hideLoginModal(){
-  document.getElementById('login-modal').style.display='none';
+  var modal=document.getElementById('login-modal');
+  modal.style.display='none';
+  modal.setAttribute('aria-hidden','true');
   resetStaffLoginForm();
+  if(loginReturnFocus&&typeof loginReturnFocus.focus==='function'){
+    loginReturnFocus.focus();
+  }
+  loginReturnFocus=null;
 }
 async function toggleAdmin(){
   if(window.isStaffAuthenticated){
@@ -1314,8 +1315,11 @@ async function sendStaffPasswordReset(){
   }
 }
 function showPasswordRecoveryMode(){
+  loginReturnFocus=document.activeElement;
   document.getElementById('loginError').textContent='Enter a new staff password.';
-  document.getElementById('login-modal').style.display='flex';
+  var modal=document.getElementById('login-modal');
+  modal.style.display='flex';
+  modal.setAttribute('aria-hidden','false');
   setStaffLoginMode('recovery');
   setTimeout(function(){document.getElementById('staffNewPassword').focus();},50);
 }
@@ -1620,9 +1624,9 @@ function renderCalendar(){
   });
   eventAnnouncements.forEach(function(event){
     cards.push('<article class="content-card">'+
-      '<h3>'+escapeHtml(event.title)+'</h3>'+
-      '<p>'+escapeHtml(event.body)+'</p>'+
-      '<p><strong>Posted:</strong> '+escapeHtml(event.date)+'</p>'+
+      '<h3>'+event.title+'</h3>'+
+      '<p>'+event.body+'</p>'+
+      '<p><strong>Posted:</strong> '+event.date+'</p>'+
     '</article>');
   });
   target.innerHTML=cards.join('');
@@ -2107,6 +2111,27 @@ function closeRequestDrawer(){
     drawerReturnFocus.focus();
   }
 }
+function trapLoginModalFocus(event){
+  var modal=document.getElementById('login-modal');
+  if(!modal||modal.style.display==='none')return;
+  if(event.key==='Escape'){
+    event.preventDefault();
+    hideLoginModal();
+    return;
+  }
+  if(event.key!=='Tab')return;
+  var focusable=Array.from(modal.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.disabled&&el.offsetParent!==null;});
+  if(!focusable.length)return;
+  var first=focusable[0];
+  var last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){
+    event.preventDefault();
+    last.focus();
+  }else if(!event.shiftKey&&document.activeElement===last){
+    event.preventDefault();
+    first.focus();
+  }
+}
 async function openRequestDrawer(trackingNumber,trigger){
   if(!window.isStaffAuthenticated)return showLoginModal();
   activeDrawerTrackingNumber=trackingNumber;
@@ -2304,6 +2329,7 @@ function initInteractiveControls(){
   bindClick('drawerCloseBtn',closeRequestDrawer);
   bindClick('drawerBackdrop',closeRequestDrawer);
   bindClick('drawerSaveBtn',saveRequestDrawer);
+  document.addEventListener('keydown',trapLoginModalFocus);
   document.addEventListener('keydown',trapDrawerFocus);
   var publicPhotos=document.getElementById('publicReqPhotos');
   if(publicPhotos)publicPhotos.addEventListener('change',handlePhotoSelection);
@@ -2392,20 +2418,6 @@ function initInteractiveControls(){
     });
   }
 }
-window.MagnoliaDebugLayout=function(){
-  var viewport=document.documentElement.clientWidth;
-  return Array.from(document.querySelectorAll('body *')).filter(function(el){
-    return el.scrollWidth>viewport;
-  }).map(function(el){
-    return {
-      tag:el.tagName,
-      id:el.id||'',
-      className:typeof el.className==='string'?el.className:'',
-      scrollWidth:el.scrollWidth,
-      viewport:viewport
-    };
-  });
-};
 populateResidentDepth();initInteractiveControls();renderAnnouncements();renderRequests();updateHeroStats();loadAnnouncements();initStaffAuth();
 </script>
 </body>

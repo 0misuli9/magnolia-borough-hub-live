@@ -171,8 +171,8 @@ export function getClientIp(req) {
   return String(value || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
 }
 
-export async function checkRateLimit(req, key, limit, windowSeconds = RATE_LIMIT_WINDOW_SECONDS) {
-  const bucketKey = `${key}:${getClientIp(req)}`;
+export async function checkRateLimit(req, key, limit, windowSeconds = RATE_LIMIT_WINDOW_SECONDS, options = {}) {
+  const bucketKey = options.global ? key : `${key}:${getClientIp(req)}`;
 
   try {
     const { data, error } = await getServiceSupabaseClient().rpc("check_rate_limit", {

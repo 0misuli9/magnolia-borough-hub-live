@@ -223,6 +223,17 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "Method not allowed. Use POST." });
   }
 
+  const dailyMax = Number.parseInt(process.env.OPENAI_DAILY_CHAT_MAX || "2000", 10);
+  const dayKey = `chat:global:${new Date().toISOString().slice(0, 10)}`;
+  const globalLimit = await checkRateLimit(req, dayKey, dailyMax, 86400, { global: true });
+  if (!globalLimit.allowed) {
+    return sendJson(res, 429, {
+      success: false,
+      error: "CHAT_TEMPORARILY_UNAVAILABLE",
+      message: "The assistant is busy right now. Please try again later.",
+    });
+  }
+
   const rateLimit = await checkRateLimit(req, "chat", 20);
   if (!rateLimit.allowed) {
     return rejectRateLimited(res, rateLimit);

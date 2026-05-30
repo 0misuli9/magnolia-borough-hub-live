@@ -1,5 +1,5 @@
 import { getServiceSupabaseClient, logAuditEvent } from "./_audit.js";
-import { getMethodNotAllowed, normalizeTrackingNumber, sendJson } from "./_http.js";
+import { checkRateLimit, getMethodNotAllowed, normalizeTrackingNumber, rejectRateLimited, sendJson } from "./_http.js";
 import { randomUUID } from "crypto";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
@@ -122,6 +122,11 @@ async function findRequest(supabase, requestId, trackingNumber) {
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return getMethodNotAllowed(res, ["POST"]);
+  }
+
+  const rateLimit = await checkRateLimit(req, "requests:photos", 6);
+  if (!rateLimit.allowed) {
+    return rejectRateLimited(res, rateLimit);
   }
 
   try {

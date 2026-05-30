@@ -6,14 +6,14 @@ const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
 const PHOTOS_TABLE = "request_photos";
 const PHOTO_BUCKET = "request-photos";
 const MAX_PHOTOS = 3;
-const MAX_DECODED_BYTES = 1.25 * 1024 * 1024;
-const MAX_TOTAL_DECODED_BYTES = 3.75 * 1024 * 1024;
+const MAX_DECODED_BYTES = 800 * 1024;
+const MAX_TOTAL_DECODED_BYTES = 2.5 * 1024 * 1024;
 
 function parseJsonBody(body) {
   if (!body) return null;
 
   if (typeof body === "string") {
-    if (body.length > 6 * 1024 * 1024) return null;
+    if (body.length > 4 * 1024 * 1024) return null;
 
     try {
       return JSON.parse(body);

@@ -1798,7 +1798,7 @@ function resizeImageFile(file){
         ctx.drawImage(image,0,0,canvas.width,canvas.height);
         var quality=0.82;
         var output=await canvasToDataUrl(canvas,quality);
-        while(output.blob.size>1150*1024&&quality>0.58){
+        while(output.blob.size>700*1024&&quality>0.58){
           quality-=0.08;
           output=await canvasToDataUrl(canvas,quality);
         }

@@ -349,6 +349,9 @@ async function verifyStaffSession(session){
   });
   var data=await res.json();
   if(!res.ok||!data.authenticated){
+    if(data&&data.error==='MFA_REQUIRED'){
+      await promptStaffMfaStepUp(data.message);
+    }
     throw new Error(data&&data.message?data.message:'This account is not authorized for staff access.');
   }
   return data.staff||null;
@@ -535,6 +538,37 @@ async function beginStaffMfaIfNeeded(client){
   document.getElementById('loginError').textContent='Enter the code from the staff authenticator app.';
   setTimeout(function(){document.getElementById('staffMfaCode').focus();},50);
   return true;
+}
+async function promptStaffMfaStepUp(message){
+  loginReturnFocus=document.activeElement;
+  var modal=document.getElementById('login-modal');
+  modal.style.display='flex';
+  modal.setAttribute('aria-hidden','false');
+  document.getElementById('loginError').textContent=message||'Multi-factor authentication is required for staff access.';
+  try{
+    var client=await getSupabaseClient();
+    var started=await beginStaffMfaIfNeeded(client);
+    if(!started){
+      setStaffLoginMode('password');
+      document.getElementById('loginError').textContent='Please sign in again and complete multi-factor authentication.';
+      setTimeout(function(){document.getElementById('staffPassword').focus();},50);
+    }
+  }catch(err){
+    setStaffLoginMode('password');
+    document.getElementById('loginError').textContent=err&&err.message?err.message:'Unable to start multi-factor authentication.';
+    setTimeout(function(){document.getElementById('staffPassword').focus();},50);
+  }
+}
+async function handleStaffApiAuthFailure(res,data){
+  if(data&&data.error==='MFA_REQUIRED'){
+    await promptStaffMfaStepUp(data.message);
+    return true;
+  }
+  if(res.status===401||res.status===403){
+    setStaffSession(null,null);
+    return true;
+  }
+  return false;
 }
 async function handleStaffMfaVerify(){
   var code=document.getElementById('staffMfaCode').value.trim();
@@ -798,8 +832,8 @@ async function fetchAdminMetrics(){
     });
     var data=await res.json();
     if(res.status===401||res.status===403){
-      setStaffSession(null,null);
-      document.getElementById('auditStatus').textContent='Staff session expired.';
+      await handleStaffApiAuthFailure(res,data);
+      document.getElementById('auditStatus').textContent=data&&data.message?data.message:'Staff session expired.';
       return;
     }
     if(!res.ok||!data.success){
@@ -922,7 +956,7 @@ async function loadAnnouncements(staffMode,existingToken){
     var res=await fetch(url,{headers:headers});
     var data=await res.json();
     if((res.status===401||res.status===403)&&staffMode){
-      setStaffSession(null,null);
+      await handleStaffApiAuthFailure(res,data);
     }
     if(!res.ok){
       throw new Error(data&&data.error?data.error:'Failed to load announcements.');
@@ -953,7 +987,7 @@ async function postAnnouncement(){
     });
     var data=await res.json();
     if(!res.ok){
-      if(res.status===401||res.status===403)setStaffSession(null,null);
+      await handleStaffApiAuthFailure(res,data);
       throw new Error(data&&data.error?data.error:'Failed to post announcement.');
     }
     document.getElementById('annTitle').value='';
@@ -984,7 +1018,7 @@ async function addRequest(){
     });
     var data=await res.json();
     if(!res.ok){
-      if(res.status===401||res.status===403)setStaffSession(null,null);
+      await handleStaffApiAuthFailure(res,data);
       throw new Error(data&&data.error?data.error:'Failed to log request.');
     }
     var id=autoAddRequest(data.request);
@@ -1253,7 +1287,7 @@ async function loadStaffRequests(existingToken){
   });
   var data=await res.json();
   if(res.status===401||res.status===403){
-    setStaffSession(null,null);
+    await handleStaffApiAuthFailure(res,data);
     throw new Error(data&&data.message?data.message:'Staff session expired.');
   }
   if(!res.ok){
@@ -1277,7 +1311,7 @@ async function updateRequestStatus(trackingNumber,status,e){
     });
     var data=await res.json();
     if(!res.ok){
-      if(res.status===401||res.status===403)setStaffSession(null,null);
+      await handleStaffApiAuthFailure(res,data);
       throw new Error(data&&data.message?data.message:'Failed to update request.');
     }
     await loadStaffRequests(token);
@@ -1429,6 +1463,7 @@ async function openRequestDrawer(trackingNumber,trigger,e){
     });
     var data=await res.json();
     if(!res.ok||!data.request){
+      await handleStaffApiAuthFailure(res,data);
       throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to load request detail.');
     }
     renderDrawerDetails(data);
@@ -1458,6 +1493,7 @@ async function saveRequestDrawer(){
     });
     var data=await res.json();
     if(!res.ok){
+      await handleStaffApiAuthFailure(res,data);
       throw new Error(data&&data.message?data.message:data&&data.error?data.error:'Unable to save request.');
     }
     await loadStaffRequests(token);

@@ -169,6 +169,7 @@ export async function getAuthenticatedStaff(req) {
     const result = {
       authenticated: false,
       statusCode: 401,
+      errorCode: "MFA_REQUIRED",
       message: "Multi-factor authentication is required for staff access.",
     };
     if (req) req[STAFF_AUTH_CACHE_KEY] = result;
@@ -192,7 +193,7 @@ export async function requireStaff(req, res) {
   if (!staff.authenticated) {
     res.status(staff.statusCode).json({
       success: false,
-      error: staff.statusCode === 403 ? "FORBIDDEN" : "UNAUTHORIZED",
+      error: staff.errorCode || (staff.statusCode === 403 ? "FORBIDDEN" : "UNAUTHORIZED"),
       message: staff.message,
     });
     return null;

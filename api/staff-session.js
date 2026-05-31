@@ -19,6 +19,7 @@ export default async function handler(req, res) {
   return sendJson(res, 200, {
     success: true,
     authenticated: staff.authenticated,
+    error: staff.authenticated ? null : staff.errorCode || null,
     message: staff.authenticated ? null : staff.message,
     staff: staff.authenticated
       ? {

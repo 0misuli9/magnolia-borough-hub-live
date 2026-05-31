@@ -1,6 +1,8 @@
 import { getServiceSupabaseClient } from "./_audit.js";
+import { createHash } from "node:crypto";
 
-const DEFAULT_STAFF_ROLES = ["staff", "admin", "owner"];
+const DEFAULT_STAFF_ROLES = ["staff", "admin", "owner", "clerk"];
+const STAFF_AUTH_CACHE_KEY = Symbol.for("magnolia.staffAuth");
 
 function getHeaderValue(req, name) {
   const value = req.headers?.[name];
@@ -41,15 +43,26 @@ function getAllowedRoles() {
   return configuredRoles.length ? configuredRoles : DEFAULT_STAFF_ROLES;
 }
 
+function hashUserId(userId) {
+  return createHash("sha256")
+    .update(String(userId || ""))
+    .digest("hex")
+    .slice(0, 12);
+}
+
 function addRole(roles, value) {
   if (typeof value === "string" && value.trim()) {
     roles.add(value.trim().toLowerCase());
   }
 }
 
-function getUserRoles(user) {
+function getUserRoles(user, staffProfile = null) {
   const appMetadata = user?.app_metadata || {};
   const roles = new Set();
+
+  if (staffProfile?.active === true) {
+    addRole(roles, staffProfile.role || "staff");
+  }
 
   addRole(roles, appMetadata.role);
   addRole(roles, appMetadata.staff_role);
@@ -64,7 +77,7 @@ function getUserRoles(user) {
   return roles;
 }
 
-function isStaffUser(user) {
+function hasAppMetadataStaffSignal(user) {
   const appMetadata = user?.app_metadata || {};
 
   if (appMetadata.is_staff === true) {
@@ -75,49 +88,102 @@ function isStaffUser(user) {
   return getAllowedRoles().some((role) => roles.has(role));
 }
 
+function isStaffUser(user, staffProfile = null) {
+  return staffProfile?.active === true || hasAppMetadataStaffSignal(user);
+}
+
+async function getActiveStaffProfile(supabase, userId) {
+  if (!userId) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("staff_profiles")
+    .select("id,role,active,email,full_name")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[api/auth] staff_profiles lookup failed; falling back to app_metadata", {
+      code: error.code || null,
+      message: error.message || "Unknown staff profile lookup error.",
+      userHash: hashUserId(userId),
+    });
+    return null;
+  }
+
+  return data?.active === true ? data : null;
+}
+
 export async function getAuthenticatedStaff(req) {
+  if (req?.[STAFF_AUTH_CACHE_KEY]) {
+    return req[STAFF_AUTH_CACHE_KEY];
+  }
+
   const token = getBearerToken(req);
 
   if (!token) {
-    return {
+    const result = {
       authenticated: false,
       statusCode: 401,
       message: "Staff login required.",
     };
+    if (req) req[STAFF_AUTH_CACHE_KEY] = result;
+    return result;
   }
 
   const supabase = getServiceSupabaseClient();
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data?.user) {
-    return {
+    const result = {
       authenticated: false,
       statusCode: 401,
       message: "Staff session expired. Please sign in again.",
     };
+    if (req) req[STAFF_AUTH_CACHE_KEY] = result;
+    return result;
   }
 
-  if (!isStaffUser(data.user)) {
-    return {
+  const staffProfile = await getActiveStaffProfile(supabase, data.user.id);
+  const appMetadataFallback = hasAppMetadataStaffSignal(data.user);
+
+  if (!isStaffUser(data.user, staffProfile)) {
+    const result = {
       authenticated: false,
       statusCode: 403,
       message: "This account is not authorized for staff access.",
     };
+    if (req) req[STAFF_AUTH_CACHE_KEY] = result;
+    return result;
+  }
+
+  if (!staffProfile && appMetadataFallback) {
+    console.warn("[api/auth] Staff access granted through temporary app_metadata fallback", {
+      via: "app_metadata_fallback",
+      userHash: hashUserId(data.user.id),
+    });
   }
 
   if (shouldRequireMfa() && getJwtPayload(token).aal !== "aal2") {
-    return {
+    const result = {
       authenticated: false,
       statusCode: 401,
       message: "Multi-factor authentication is required for staff access.",
     };
+    if (req) req[STAFF_AUTH_CACHE_KEY] = result;
+    return result;
   }
 
-  return {
+  const result = {
     authenticated: true,
     user: data.user,
-    roles: Array.from(getUserRoles(data.user)),
+    roles: Array.from(getUserRoles(data.user, staffProfile)),
+    staffProfile,
+    authorizationSource: staffProfile ? "staff_profiles" : "app_metadata",
   };
+  if (req) req[STAFF_AUTH_CACHE_KEY] = result;
+  return result;
 }
 
 export async function requireStaff(req, res) {

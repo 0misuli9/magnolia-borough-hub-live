@@ -21,6 +21,7 @@ Important fields:
 - `source`: `public`, `chat`, or `staff`
 - `created_at`
 - `updated_at`
+- `deleted_at`: nullable soft-delete/archive marker for retained records
 
 Legacy values are normalized:
 
@@ -30,6 +31,8 @@ Legacy values are normalized:
 Public lookup happens through `/api/requests?tracking_number=MGN-7K9Q2M8P`; existing legacy `MGN-####` numbers remain valid. Public browser clients should not list this table directly.
 
 Public lookup responses intentionally omit resident address, description, assignment, manual priority, internal notes, private photo paths, and signed URLs. Staff detail responses remain the operational surface for full records.
+
+Requests with `deleted_at` set are retained for records purposes but hidden from public lookup and default staff queues. Staff exports may include soft-deleted records only when explicitly requested.
 
 Triage is derived server-side at read time and is not stored in the table. Active `open` and `in_progress` requests receive a computed score, level, badges, and factor explanation using category urgency, age, SLA target, and simple duplicate heuristics. The existing `priority` field remains a manual staff override; `urgent` pins a request above computed triage order.
 
@@ -140,7 +143,11 @@ Public answers should use approved active knowledge only. Draft and unapproved k
 
 ## Records And Retention Foundation
 
-Requests, announcements, and audit logs are persisted in Supabase and can be exported by staff APIs or SQL queries for controlled review. A formal municipal records-retention policy has not been encoded in schema yet. Future work should add retention metadata, soft-delete/archive fields where needed, and borough-approved export procedures.
+Requests, announcements, audit logs, request photos, and audit write failures are persisted in Supabase for controlled review. `public.requests.deleted_at` is the soft-delete marker: application surfaces hide those records by default, but the records remain available to staff exports and database administrators. Hard deletion should be a deliberate manual database operation only after the borough approves the applicable retention window.
+
+Staff can export request records as CSV through `GET /api/requests-export` with a valid staff token. Supported filters include `status`, `category`, `created_from`, `created_to`, `updated_from`, `updated_to`, `include_deleted=1`, and `include_internal_notes=1`. Internal notes are excluded unless explicitly requested. Each export writes a sanitized `requests_exported` audit event with row count and filters, never row contents.
+
+Final OPRA/public-records retention windows, redaction rules, and release procedures require borough approval before broad operational use.
 
 ## Future Tenant Fields
 

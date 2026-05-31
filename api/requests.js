@@ -113,6 +113,7 @@ async function handleLookup(req, res, trackingNumber) {
     .from(REQUESTS_TABLE)
     .select("*")
     .eq("tracking_number", trackingNumber)
+    .is("deleted_at", null)
     .limit(1);
 
   if (error) {
@@ -250,6 +251,7 @@ async function handleStaffList(req, res) {
   const category = getQueryParam(req, "category");
   const search = clampText(getQueryParam(req, "search"), 120);
   const sort = getQueryParam(req, "sort") || "urgent";
+  const includeDeleted = getQueryParam(req, "include_deleted") === "1";
   const order = sort === "oldest" ? "created_at" : "created_at";
   const ascending = sort === "oldest";
 
@@ -261,6 +263,7 @@ async function handleStaffList(req, res) {
       status,
       category,
       search,
+      includeDeleted,
     });
   }
 
@@ -272,6 +275,10 @@ async function handleStaffList(req, res) {
 
   if (status) {
     query = query.eq("status", status);
+  }
+
+  if (!includeDeleted) {
+    query = query.is("deleted_at", null);
   }
 
   if (category) {
@@ -320,7 +327,7 @@ async function handleStaffList(req, res) {
   });
 }
 
-async function handleStaffUrgentList(req, res, { supabase, limit, offset, status, category, search }) {
+async function handleStaffUrgentList(req, res, { supabase, limit, offset, status, category, search, includeDeleted }) {
   const rankCap = 1000;
   let query = supabase
     .from(REQUESTS_TABLE)
@@ -332,6 +339,10 @@ async function handleStaffUrgentList(req, res, { supabase, limit, offset, status
     query = query.eq("status", status);
   } else {
     query = query.in("status", ["open", "in_progress"]);
+  }
+
+  if (!includeDeleted) {
+    query = query.is("deleted_at", null);
   }
 
   if (category) {

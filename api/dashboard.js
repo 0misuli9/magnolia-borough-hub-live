@@ -130,6 +130,7 @@ export default async function handler(req, res) {
       supabase
         .from(REQUESTS_TABLE)
         .select("*")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase

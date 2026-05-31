@@ -28,6 +28,7 @@ export function normalizeRequestRecord(record, triageContext = []) {
     source: record.source || "public",
     created_at: record.created_at || null,
     updated_at: record.updated_at || null,
+    deleted_at: record.deleted_at || null,
     triage: computeRequestTriage(record, triageContext),
   };
 }
@@ -49,6 +50,7 @@ export function normalizePublicRequestRecord(record, options = {}) {
   delete normalized.assigned_to;
   delete normalized.priority;
   delete normalized.triage;
+  delete normalized.deleted_at;
 
   return normalized;
 }

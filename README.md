@@ -47,25 +47,13 @@ STAFF_REQUIRE_MFA
 
 ## Staff Auth
 
-Create staff users in Supabase Auth. Add trusted `app_metadata`:
+Create staff users in Supabase Auth, then add an active row in `public.staff_profiles` for each user UUID. `staff_profiles` is the authoritative staff-role table during the transition. Supabase Auth `app_metadata` remains a temporary fallback only so the current review login is not locked out before staff rows and MFA enrollment are complete.
 
-```json
-{"role":"staff"}
-```
-
-or:
-
-```json
-{"roles":["staff"]}
-```
-
-Allowed roles default to `staff`, `admin`, and `owner`. Set `STAFF_REQUIRE_MFA=true` to require Supabase MFA assurance level `aal2`.
-
-For controlled borough testing, use individual staff accounts where possible so audit logs are meaningful. The migration includes `staff_profiles`; a future hardening pass should make that table the single source of truth for staff role authorization after current staff rows are populated.
+Allowed roles default to `staff`, `admin`, `owner`, and `clerk`. Leave `STAFF_REQUIRE_MFA` unset or `false` until every staff user has enrolled TOTP MFA. After the runbook in `DEPLOYMENT_CHECKLIST.md` is complete, set `STAFF_REQUIRE_MFA=true` to require Supabase assurance level `aal2` for staff APIs.
 
 ## Public-Sector UX Notes
 
-- The interface is designed for controlled municipal review, not certified compliance.
+- The interface is designed for controlled municipal review and built with public-sector UX and accessibility discipline.
 - Accessibility work includes skip-to-main-content, visible focus states, labeled form controls, live regions for chat/status/toasts, reduced-motion support, and keyboard-operable task cards/stats.
 - Final privacy, public-records, accessibility statement, and retention wording should be approved by the borough.
 

@@ -107,19 +107,21 @@ Dashboard display filters the staff activity table to meaningful operational eve
 
 ## Staff Profiles And Roles
 
-The migration creates `public.staff_profiles` for future staff management. Current server authorization trusts Supabase Auth `app_metadata` roles:
+Expected table after running `supabase/migrations/20260531090000_staff_profiles_shape.sql`: `public.staff_profiles`
 
-```json
-{"role":"staff"}
-```
+Important fields:
 
-or:
+- `id`: UUID primary key referencing `auth.users(id)`
+- `role`: staff role label, default `clerk`
+- `active`: staff access flag
+- `email`: optional operator-readable email
+- `full_name`: optional operator-readable name
+- `created_at`
+- `updated_at`
 
-```json
-{"roles":["staff"]}
-```
+Server APIs and the RLS helper `public.is_staff_user()` treat an active `staff_profiles` row as authoritative. During the controlled transition, Supabase Auth `app_metadata` remains a temporary fallback so the existing login is not locked out before profile rows and MFA enrollment are complete. Remove that fallback only after the deployment runbook confirms every staff user works through `staff_profiles`.
 
-Recommended next hardening step: make `public.staff_profiles` the single source of truth for staff authorization after verified rows exist for every staff user. At that point, update both `api/_staff-auth.js` and `public.is_staff_user()` together so API authorization and RLS cannot drift.
+No migration in this repo inserts real staff rows. Operators must create Auth users and insert the matching UUIDs manually in Supabase.
 
 ## Borough Knowledge
 

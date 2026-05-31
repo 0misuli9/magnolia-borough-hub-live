@@ -23,6 +23,7 @@ Staff-only APIs:
 - `GET /api/requests`
 - `GET /api/requests?tracking_number=MGN-7K9Q2M8P&staff=1`
 - `PATCH /api/requests`
+- `GET /api/requests-export`
 - `GET /api/announcements?staff=1`
 - `POST/PATCH/DELETE /api/announcements`
 - `GET /api/dashboard`
@@ -61,7 +62,13 @@ Tracking numbers generated after this hardening pass use a crypto-random 8-chara
 
 Photo uploads are staff-visible only. The browser accepts JPEG, PNG, and WebP files, rejects SVG/non-raster files, and re-encodes images through canvas before upload to reduce size and strip EXIF/GPS metadata. The server accepts only resized JPEG data URLs, validates count and size, strips JPEG metadata again, and stores objects in the private `request-photos` Supabase Storage bucket. Staff access uses short-lived signed URLs from the server; public tracking lookup never returns photo URLs or internal notes.
 
-The current CSP still permits inline script/style because `index.html` contains an inline application script and inline CSS. A future strict-CSP pass should move frontend JavaScript and CSS into external files or add nonces/hashes, then remove `script-src 'unsafe-inline'`.
+The application script is self-hosted and `script-src` does not allow inline script. Inline CSS remains allowed for the current single-page UI; any user-generated text rendered into template HTML must continue to be escaped first.
+
+## Audit Integrity
+
+System/public actions write audit rows with `actor_id = null` unless `AUDIT_SYSTEM_ACTOR_ID` is explicitly configured. High-value audit write failures are logged and copied into `public.audit_write_failures` with sanitized payloads so they can be reviewed instead of disappearing silently.
+
+High-value events include request creation, request status/priority/assignment changes, announcement creation/update/archive, staff sign-in if emitted, and request exports. Audit metadata must remain limited to tracking numbers, counts, status transitions, field names, and channel/source labels.
 
 ## Abuse Controls
 
@@ -76,3 +83,7 @@ Do not log full resident descriptions, addresses, phone numbers, or emails in pr
 New request-detail events should stay sanitized: status transitions, priority transitions, assignment changed, note changed, and photo counts are acceptable. Internal-note content, resident message content, raw response IDs, and image data should not be written to audit metadata.
 
 This portal is not for emergencies. Emergency UI and chat guidance should direct residents to call 911.
+
+## Records And Retention
+
+`GET /api/requests-export` is staff-only and streams filtered CSV for controlled records review. Exports are audited with row count and filters only. `public.requests.deleted_at` is the soft-delete marker; soft-deleted requests are hidden from public lookup and default staff queues but retained until a borough-approved retention process authorizes hard deletion.

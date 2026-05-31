@@ -14,9 +14,9 @@ The browser may receive only Supabase public Auth configuration from `/api/auth-
 
 Protected APIs require `Authorization: Bearer <Supabase access token>`.
 
-`api/_staff-auth.js` verifies the token with Supabase and accepts only trusted staff roles in `app_metadata`. Optional MFA enforcement is controlled by `STAFF_REQUIRE_MFA=true`.
+`api/_staff-auth.js` verifies the token with Supabase. `public.staff_profiles` is the authoritative staff-role table for the transition, while Supabase Auth `app_metadata` remains a temporary fallback so the current borough review login is not locked out before staff profile rows are populated.
 
-Important current-state note: the database migration also creates `public.staff_profiles`, but current production authorization still uses Supabase Auth `app_metadata`. Before switching the source of truth to `staff_profiles`, populate the staff profile rows and test staff login in Supabase so the existing borough account is not locked out. The desired hardening direction is individual staff accounts, MFA required, and `staff_profiles` as the authoritative role table for both APIs and RLS.
+The RLS helper `public.is_staff_user()` mirrors this transition: active `staff_profiles` row OR the temporary `app_metadata` fallback. Remove the fallback only after the staff-profile runbook is complete and verified. Optional MFA enforcement is controlled by `STAFF_REQUIRE_MFA=true` and should remain off until all staff have enrolled.
 
 Staff-only APIs:
 

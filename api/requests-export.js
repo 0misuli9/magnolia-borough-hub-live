@@ -70,10 +70,6 @@ function buildExportFilters(req) {
 function applyFilters(query, filters) {
   let nextQuery = query;
 
-  if (!filters.includeDeleted) {
-    nextQuery = nextQuery.is("deleted_at", null);
-  }
-
   if (filters.status) {
     nextQuery = nextQuery.eq("status", filters.status);
   }
@@ -117,7 +113,7 @@ async function fetchExportPage(supabase, filters, from, to) {
     throw error;
   }
 
-  return Array.isArray(data) ? data : [];
+  return (Array.isArray(data) ? data : []).filter((record) => filters.includeDeleted || !record.deleted_at);
 }
 
 function rowValues(record, columns) {

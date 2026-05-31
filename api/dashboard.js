@@ -130,7 +130,6 @@ export default async function handler(req, res) {
       supabase
         .from(REQUESTS_TABLE)
         .select("*")
-        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
@@ -155,7 +154,9 @@ export default async function handler(req, res) {
     if (auditResult.error) throw auditResult.error;
     if (conversationsResult.error) throw conversationsResult.error;
 
-    const requests = (Array.isArray(requestsResult.data) ? requestsResult.data : []).map(normalizeRequest);
+    const requests = (Array.isArray(requestsResult.data) ? requestsResult.data : [])
+      .filter((request) => !request.deleted_at)
+      .map(normalizeRequest);
     const announcements = (Array.isArray(announcementsResult.data) ? announcementsResult.data : []).map(normalizeAnnouncement);
     const auditRows = Array.isArray(auditResult.data) ? auditResult.data : [];
     const activeAnnouncements = announcements.filter((announcement) => isResidentVisibleAnnouncement(announcement));

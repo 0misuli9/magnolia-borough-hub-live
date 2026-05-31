@@ -44,6 +44,10 @@ function sanitizeStaffSearch(value) {
     .trim();
 }
 
+function isSoftDeleted(record) {
+  return Boolean(record?.deleted_at);
+}
+
 function buildPatchRecord(body) {
   const patch = {
     updated_at: new Date().toISOString(),
@@ -113,14 +117,13 @@ async function handleLookup(req, res, trackingNumber) {
     .from(REQUESTS_TABLE)
     .select("*")
     .eq("tracking_number", trackingNumber)
-    .is("deleted_at", null)
     .limit(1);
 
   if (error) {
     throw error;
   }
 
-  if (!Array.isArray(data) || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0 || isSoftDeleted(data[0])) {
     return sendJson(res, 404, {
       success: false,
       error: "REQUEST_NOT_FOUND",
@@ -277,10 +280,6 @@ async function handleStaffList(req, res) {
     query = query.eq("status", status);
   }
 
-  if (!includeDeleted) {
-    query = query.is("deleted_at", null);
-  }
-
   if (category) {
     query = query.eq("category", normalizeCategory(category));
   }
@@ -300,8 +299,9 @@ async function handleStaffList(req, res) {
     throw error;
   }
 
-  const triageContext = buildTriageContext(Array.isArray(data) ? data : []);
-  const normalizedRequests = (Array.isArray(data) ? data : []).map((record) => normalizeRequestRecord(record, triageContext));
+  const visibleRecords = (Array.isArray(data) ? data : []).filter((record) => includeDeleted || !isSoftDeleted(record));
+  const triageContext = buildTriageContext(visibleRecords);
+  const normalizedRequests = visibleRecords.map((record) => normalizeRequestRecord(record, triageContext));
   const sortedRequests = normalizedRequests.sort((left, right) => {
     if (sort === "newest") {
       return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
@@ -341,10 +341,6 @@ async function handleStaffUrgentList(req, res, { supabase, limit, offset, status
     query = query.in("status", ["open", "in_progress"]);
   }
 
-  if (!includeDeleted) {
-    query = query.is("deleted_at", null);
-  }
-
   if (category) {
     query = query.eq("category", normalizeCategory(category));
   }
@@ -364,7 +360,7 @@ async function handleStaffUrgentList(req, res, { supabase, limit, offset, status
     throw error;
   }
 
-  const records = Array.isArray(data) ? data : [];
+  const records = (Array.isArray(data) ? data : []).filter((record) => includeDeleted || !isSoftDeleted(record));
   const triageContext = buildTriageContext(records);
   const sortedRequests = records
     .map((record) => normalizeRequestRecord(record, triageContext))

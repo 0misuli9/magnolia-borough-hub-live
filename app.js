@@ -129,6 +129,9 @@ function triageSummaryHtml(triage){
   if(!triage||!Array.isArray(triage.factors)||!triage.factors.length)return '';
   return '<div class="triage-summary">'+triage.factors.map(escapeHtml).join(' · ')+'</div>';
 }
+function preventDefaultIfEvent(e){
+  if(e&&typeof e.preventDefault==='function')e.preventDefault();
+}
 function renderRequests(){
   const open=requests.filter(r=>r.status==='open').length;
   const prog=requests.filter(r=>normalizeUiStatus(r.status)==='in_progress').length;
@@ -146,7 +149,8 @@ function renderRequests(){
     return `<div class="request-card" data-request-card="${r.id}"${cardAttrs}><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div>${triage}<div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
   }).join('')+'</div>';
 }
-async function lookupTicket(){
+async function lookupTicket(e){
+  preventDefaultIfEvent(e);
   const input=document.getElementById('lookupInput').value.trim().toUpperCase();
   const result=document.getElementById('lookupResult');
   if(!input){result.style.display='none';return;}
@@ -177,7 +181,7 @@ async function lookupTicket(){
     result.innerHTML='No request found for <strong>'+escapeHtml(id)+'</strong>. Please check your number or call Borough Hall at (856) 783-1520.';
   }
 }
-document.getElementById('lookupInput').addEventListener('keydown',function(e){if(e.key==='Enter')lookupTicket();});
+document.getElementById('lookupInput').addEventListener('keydown',function(e){if(e.key==='Enter')lookupTicket(e);});
 document.getElementById('requestSearch').addEventListener('keydown',function(e){if(e.key==='Enter')loadStaffRequests();});
 function switchTab(name,el){
   if(window.isStaffAuthenticated&&currentStaffView==='dashboard'){
@@ -992,8 +996,8 @@ function canvasToDataUrl(canvas,quality){
         return;
       }
       var reader=new FileReader();
-      reader.onload=function(){resolve({blob:blob,dataUrl:String(reader.result||'')});};
-      reader.onerror=function(){reject(new Error('Unable to read resized photo.'));};
+      reader.addEventListener('load',function(){resolve({blob:blob,dataUrl:String(reader.result||'')});});
+      reader.addEventListener('error',function(){reject(new Error('Unable to read resized photo.'));});
       reader.readAsDataURL(blob);
     },'image/jpeg',quality);
   });
@@ -1011,7 +1015,7 @@ function resizeImageFile(file){
     }
     var image=new Image();
     var objectUrl=URL.createObjectURL(file);
-    image.onload=async function(){
+    image.addEventListener('load',async function(){
       try{
         var maxDimension=1600;
         var scale=Math.min(1,maxDimension/Math.max(image.width,image.height));
@@ -1038,11 +1042,11 @@ function resizeImageFile(file){
         URL.revokeObjectURL(objectUrl);
         reject(err);
       }
-    };
-    image.onerror=function(){
+    });
+    image.addEventListener('error',function(){
       URL.revokeObjectURL(objectUrl);
       reject(new Error('Unable to read one selected photo.'));
-    };
+    });
     image.src=objectUrl;
   });
 }
@@ -1083,7 +1087,8 @@ async function uploadRequestPhotos(request,photos){
   }
   return data;
 }
-async function submitPublicRequest(){
+async function submitPublicRequest(e){
+  preventDefaultIfEvent(e);
   var category=document.getElementById('publicReqCategory').value;
   var location=document.getElementById('publicReqLocation').value.trim();
   var title=document.getElementById('publicReqTitle').value.trim();
@@ -1458,9 +1463,10 @@ function showTyping(){
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 function removeTyping(){var t=document.getElementById('typing');if(t)t.remove();}
-function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage(e);}}
 function quickSend(text){document.getElementById('chatInput').value=text;sendMessage();}
-async function sendMessage(){
+async function sendMessage(e){
+  preventDefaultIfEvent(e);
   var input=document.getElementById('chatInput');
   var text=input.value.trim();
   var responsePayload=null;

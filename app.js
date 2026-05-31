@@ -142,12 +142,47 @@ function renderRequests(){
   document.getElementById('openCount').textContent=open+prog;
   const list=document.getElementById('reqList');
   if(!requests.length){list.innerHTML='<div class="empty-state"><div class="icon">🎫</div><p>No service requests yet.</p></div>';return;}
-  list.innerHTML='<div class="requests-grid">'+requests.map(function(r){
+  var grid=document.createElement('div');
+  grid.className='requests-grid';
+  requests.forEach(function(r){
     var triage=window.isStaffAuthenticated?triageBadgeHtml(r.triage)+triageSummaryHtml(r.triage):'';
-    var controls=window.isStaffAuthenticated?`<div class="request-actions"><button type="button" data-request-detail="${r.id}">Details</button><button type="button" data-request-id="${r.id}" data-request-update="open">Open</button><button type="button" data-request-id="${r.id}" data-request-update="in_progress">In Progress</button><button type="button" data-request-id="${r.id}" data-request-update="resolved">Resolve</button></div>`:'';
-    var cardAttrs=window.isStaffAuthenticated?` tabindex="0" role="button" aria-label="Open request ${r.id} detail"`:'';
-    return `<div class="request-card" data-request-card="${r.id}"${cardAttrs}><div class="req-top"><span class="req-id">${r.id}</span><span class="req-status status-${normalizeUiStatus(r.status)}">${statusLabel(r.status)}</span></div><div class="req-title">${r.title}</div><div class="req-desc">${r.desc}</div>${triage}<div class="req-footer"><span class="req-cat">${r.cat}</span><span class="req-date">${r.date}</span></div>${controls}</div>`;
-  }).join('')+'</div>';
+    var card=document.createElement('div');
+    card.className='request-card';
+    if(window.isStaffAuthenticated){
+      card.tabIndex=0;
+      card.setAttribute('role','button');
+      card.setAttribute('aria-label','Open request '+r.id+' detail');
+      card.dataset.action='open-request-card';
+      card.dataset.tracking=r.id;
+    }
+    card.innerHTML='<div class="req-top"><span class="req-id">'+r.id+'</span><span class="req-status status-'+normalizeUiStatus(r.status)+'">'+statusLabel(r.status)+'</span></div><div class="req-title">'+r.title+'</div><div class="req-desc">'+r.desc+'</div>'+triage+'<div class="req-footer"><span class="req-cat">'+r.cat+'</span><span class="req-date">'+r.date+'</span></div>';
+    if(window.isStaffAuthenticated){
+      var actions=document.createElement('div');
+      actions.className='request-actions';
+      var detail=document.createElement('button');
+      detail.type='button';
+      detail.textContent='Details';
+      detail.dataset.action='open-request-detail';
+      detail.dataset.tracking=r.id;
+      actions.appendChild(detail);
+      [
+        {status:'open',label:'Open'},
+        {status:'in_progress',label:'In Progress'},
+        {status:'resolved',label:'Resolve'}
+      ].forEach(function(item){
+        var button=document.createElement('button');
+        button.type='button';
+        button.textContent=item.label;
+        button.dataset.action='update-request-status';
+        button.dataset.tracking=r.id;
+        button.dataset.status=item.status;
+        actions.appendChild(button);
+      });
+      card.appendChild(actions);
+    }
+    grid.appendChild(card);
+  });
+  list.replaceChildren(grid);
 }
 async function lookupTicket(e){
   preventDefaultIfEvent(e);
@@ -248,7 +283,8 @@ function startProblemReport(){
     if(input)input.focus();
   },100);
 }
-function handleResidentAction(action){
+function handleResidentAction(action,e){
+  preventDefaultIfEvent(e);
   if(action==='start-here'){
     var cards=document.querySelector('.task-grid');
     if(cards)cards.scrollIntoView({behavior:'smooth',block:'start'});
@@ -980,13 +1016,28 @@ function renderPhotoPreviews(){
     grid.innerHTML='';
     return;
   }
-  grid.innerHTML=pendingPhotoUploads.map(function(photo,index){
-    return '<div class="photo-preview">'+
-      '<img src="'+photo.previewUrl+'" alt="Selected photo preview '+(index+1)+'"/>'+
-      '<div class="photo-preview-name">'+escapeHtml(photo.name)+'</div>'+
-      '<button class="photo-remove" type="button" data-remove-photo="'+index+'">Remove</button>'+
-    '</div>';
-  }).join('');
+  var fragment=document.createDocumentFragment();
+  pendingPhotoUploads.forEach(function(photo,index){
+    var preview=document.createElement('div');
+    preview.className='photo-preview';
+    var image=document.createElement('img');
+    image.src=photo.previewUrl;
+    image.alt='Selected photo preview '+(index+1);
+    var name=document.createElement('div');
+    name.className='photo-preview-name';
+    name.textContent=photo.name;
+    var button=document.createElement('button');
+    button.className='photo-remove';
+    button.type='button';
+    button.textContent='Remove';
+    button.dataset.action='remove-photo';
+    button.dataset.photoIndex=String(index);
+    preview.appendChild(image);
+    preview.appendChild(name);
+    preview.appendChild(button);
+    fragment.appendChild(preview);
+  });
+  grid.replaceChildren(fragment);
 }
 function canvasToDataUrl(canvas,quality){
   return new Promise(function(resolve,reject){
@@ -1129,7 +1180,14 @@ async function submitPublicRequest(e){
       }
     }
     result.className='public-request-result success';
-    result.innerHTML='Request submitted. Tracking number: <strong>'+escapeHtml(trackingNumber)+'</strong>'+photoMessage+'<br/>Borough staff can review it during normal operating hours. This portal is not for emergencies. For emergencies, call 911.<br/><button class="lookup-btn" type="button" data-check-tracking="'+escapeHtml(trackingNumber)+'">Check Status</button>';
+    result.innerHTML='Request submitted. Tracking number: <strong>'+escapeHtml(trackingNumber)+'</strong>'+photoMessage+'<br/>Borough staff can review it during normal operating hours. This portal is not for emergencies. For emergencies, call 911.<br/>';
+    var checkButton=document.createElement('button');
+    checkButton.className='lookup-btn';
+    checkButton.type='button';
+    checkButton.textContent='Check Status';
+    checkButton.dataset.action='check-tracking';
+    checkButton.dataset.tracking=trackingNumber;
+    result.appendChild(checkButton);
     document.getElementById('publicReqLocation').value='';
     document.getElementById('publicReqTitle').value='';
     document.getElementById('publicReqDescription').value='';
@@ -1204,7 +1262,8 @@ async function loadStaffRequests(existingToken){
   requests=(data.requests||[]).map(normalizeCreatedRequestRecord).filter(Boolean);
   renderRequests();
 }
-async function updateRequestStatus(trackingNumber,status){
+async function updateRequestStatus(trackingNumber,status,e){
+  preventDefaultIfEvent(e);
   if(!window.isStaffAuthenticated)return showLoginModal();
   try{
     var token=await getStaffAccessToken();
@@ -1357,7 +1416,8 @@ function trapLoginModalFocus(event){
     first.focus();
   }
 }
-async function openRequestDrawer(trackingNumber,trigger){
+async function openRequestDrawer(trackingNumber,trigger,e){
+  preventDefaultIfEvent(e);
   if(!window.isStaffAuthenticated)return showLoginModal();
   activeDrawerTrackingNumber=trackingNumber;
   openDrawerShell(trigger);
@@ -1559,19 +1619,6 @@ function initInteractiveControls(){
   document.addEventListener('keydown',trapDrawerFocus);
   var publicPhotos=document.getElementById('publicReqPhotos');
   if(publicPhotos)publicPhotos.addEventListener('change',handlePhotoSelection);
-  var photoGrid=document.getElementById('photoPreviewGrid');
-  if(photoGrid){
-    photoGrid.addEventListener('click',function(event){
-      var button=event.target.closest('[data-remove-photo]');
-      if(!button)return;
-      var index=Number(button.getAttribute('data-remove-photo'));
-      if(Number.isFinite(index)){
-        pendingPhotoUploads.splice(index,1);
-        renderPhotoPreviews();
-        setPhotoError('');
-      }
-    });
-  }
   document.querySelectorAll('[data-tab]').forEach(function(button){
     button.addEventListener('click',function(){
       switchTab(button.getAttribute('data-tab'),button);
@@ -1598,47 +1645,66 @@ function initInteractiveControls(){
   if(requestSort)requestSort.addEventListener('change',function(){
     if(window.isStaffAuthenticated)loadStaffRequests();
   });
-  document.querySelectorAll('[data-action]').forEach(function(button){
-    button.addEventListener('click',function(){
-      handleResidentAction(button.getAttribute('data-action'));
+  document.querySelectorAll('.hero [data-action], .task-grid [data-action]').forEach(function(button){
+    button.addEventListener('click',function(event){
+      handleResidentAction(button.getAttribute('data-action'),event);
     });
   });
-  document.querySelectorAll('[data-prompt]').forEach(function(button){
-    button.addEventListener('click',function(){
-      quickSend(button.getAttribute('data-prompt')||'');
+  var photoGrid=document.getElementById('photoPreviewGrid');
+  if(photoGrid){
+    photoGrid.addEventListener('click',function(e){
+      const target=e.target.closest('[data-action]');
+      if(!target)return;
+      if(target.dataset.action!=='remove-photo')return;
+      e.preventDefault();
+      var index=Number(target.dataset.photoIndex);
+      if(Number.isFinite(index)){
+        pendingPhotoUploads.splice(index,1);
+        renderPhotoPreviews();
+        setPhotoError('');
+      }
     });
-  });
+  }
+  var quickPrompts=document.querySelector('.quick-prompts');
+  if(quickPrompts){
+    quickPrompts.addEventListener('click',function(e){
+      const target=e.target.closest('[data-action]');
+      if(!target)return;
+      if(target.dataset.action!=='quick-prompt')return;
+      e.preventDefault();
+      quickSend(target.dataset.prompt||'');
+    });
+  }
   var requestList=document.getElementById('reqList');
   if(requestList){
-    requestList.addEventListener('click',function(event){
-      var detailButton=event.target.closest('[data-request-detail]');
-      if(detailButton){
-        openRequestDrawer(detailButton.getAttribute('data-request-detail'),detailButton);
+    requestList.addEventListener('click',function(e){
+      const target=e.target.closest('[data-action]');
+      if(!target)return;
+      if(target.dataset.action==='open-request-detail'||target.dataset.action==='open-request-card'){
+        openRequestDrawer(target.dataset.tracking,target,e);
         return;
       }
-      var button=event.target.closest('[data-request-update]');
-      if(button){
-        updateRequestStatus(button.getAttribute('data-request-id'),button.getAttribute('data-request-update'));
+      if(target.dataset.action==='update-request-status'){
+        updateRequestStatus(target.dataset.tracking,target.dataset.status,e);
         return;
       }
-      var card=event.target.closest('[data-request-card]');
-      if(!card||event.target.closest('button'))return;
-      openRequestDrawer(card.getAttribute('data-request-card'),card);
     });
     requestList.addEventListener('keydown',function(event){
       if(event.key!=='Enter'&&event.key!==' ')return;
-      var card=event.target.closest('[data-request-card]');
+      var card=event.target.closest('[data-action="open-request-card"]');
       if(!card||event.target.closest('button'))return;
       event.preventDefault();
-      openRequestDrawer(card.getAttribute('data-request-card'),card);
+      openRequestDrawer(card.dataset.tracking,card,event);
     });
   }
   var publicRequestResult=document.getElementById('publicRequestResult');
   if(publicRequestResult){
-    publicRequestResult.addEventListener('click',function(event){
-      var button=event.target.closest('[data-check-tracking]');
-      if(!button)return;
-      document.getElementById('lookupInput').value=button.getAttribute('data-check-tracking')||'';
+    publicRequestResult.addEventListener('click',function(e){
+      const target=e.target.closest('[data-action]');
+      if(!target)return;
+      if(target.dataset.action!=='check-tracking')return;
+      e.preventDefault();
+      document.getElementById('lookupInput').value=target.dataset.tracking||'';
       focusRequestLookup();
       setTimeout(lookupTicket,150);
     });
